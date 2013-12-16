@@ -143,7 +143,7 @@ if __name__ == '__main__':
             'link': entry.get('link', '#'),
             'description': clean_text(entry.get('description', '')),
             'pubDate': timestamp.format(RFC2822_FORMAT),
-            'pubDateGenerated': entry_timestamp(entry) is None,
+            'pubDateSource': 'generated' if entry_timestamp(entry) is None else 'provided',
             'feed': {
                 'title': feed.get('title', ''),
                 'link': feed.get('link', ''),
