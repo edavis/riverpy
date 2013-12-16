@@ -13,8 +13,6 @@ class ParseFeed(threading.Thread):
     def run(self):
         while True:
             url = self.inbox.get()
-            response = None
-
             try:
                 response = requests.get(url, timeout=5.0)
                 response.raise_for_status()
