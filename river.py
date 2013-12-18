@@ -5,6 +5,7 @@ import json
 import time
 import Queue
 import random
+import cPickle
 import hashlib
 import operator
 import argparse
@@ -26,40 +27,29 @@ THREADS = 8
 OUTPUT_LIMIT = 250
 
 
-def entry_timestamp(entry):
-    """
-    Determine the timestamp for a feed entry.
-
-    Return 'None' if no timestamp can be found or the timestamp found
-    is in the future.
-    """
-    for key in ['published_parsed', 'updated_parsed', 'created_parsed']:
-        if key not in entry: continue
-        if entry[key] is None: continue
-        val = (entry[key])[:6]
-        reported_timestamp = arrow.get(datetime(*val))
-        return reported_timestamp if reported_timestamp < arrow.utcnow() else None
+def entry_fingerprint(feed, entry):
+    s = ''.join([feed.feed_url,
+                 entry.get('title', ''),
+                 entry.get('link', ''),
+                 entry.get('pubDate', ''),
+                 entry.get('description', ''),
+                 entry.get('guid', '')]).encode('utf-8', 'ignore')
+    return hashlib.sha1(s).hexdigest()
 
 
 def sort_entries(parsed_feeds):
-    """
-    Return all feed entries ordered by timestamp descending.
-    """
     redis_client = redis.StrictRedis()
-    entries = []
     for feed in parsed_feeds:
         for entry in feed.entries:
-            entry_link = entry.get('link', '')
-            timestamp_key = 'timestamp:' + hashlib.sha1(feed.feed_url + entry_link).hexdigest()
-            if redis_client.exists(timestamp_key) and entry_link:
-                timestamp = redis_client.get(timestamp_key)
-                timestamp = arrow.get(timestamp)
-            else:
-                timestamp = entry_timestamp(entry) or arrow.utcnow()
-                redis_client.set(timestamp_key, timestamp)
-            obj = {'feed': feed.feed, 'entry': entry, 'url': feed.feed_url}
-            entries.append((timestamp, obj))
-    return sorted(entries, key=operator.itemgetter(0), reverse=True)
+            fingerprint = entry_fingerprint(feed, entry)
+            if redis_client.sismember('fingerprints', fingerprint):
+                continue
+            redis_client.sadd('fingerprints', fingerprint)
+            obj = {'feed': feed.feed, 'entry': entry,
+                   'url': feed.feed_url, 'timestamp': arrow.utcnow()}
+            redis_client.lpush('entries', cPickle.dumps(obj))
+            redis_client.ltrim('entries', 0, OUTPUT_LIMIT)
+    return redis_client.lrange('entries', 0, OUTPUT_LIMIT)
 
 
 def clean_text(text, limit=280, suffix=' ...'):
@@ -80,6 +70,11 @@ def write_river(fname, obj):
 
 
 def parse_subscription_list(location):
+    """
+    Return an iterator of xmlUrls from an OPML file.
+
+    'location' can be either local or remote.
+    """
     if os.path.exists(location):
         with open(location) as fp:
             doc = etree.parse(fp)
@@ -129,12 +124,10 @@ if __name__ == '__main__':
     while not outbox.empty():
         parsed_feeds.append(outbox.get_nowait())
 
-    # Sort all the entries by their respective timestamp
     entries = sort_entries(parsed_feeds)
-    print('\nparsed %d entries from %d feeds' % (len(entries), len(feed_urls)))
-
     river_entries = []
-    for (timestamp, obj) in entries[:OUTPUT_LIMIT]:
+    for pickled_obj in entries:
+        obj = cPickle.loads(pickled_obj)
         entry = obj['entry']
         feed = obj['feed']
         entry_title = entry.get('title', '') or entry.get('description', '')
@@ -142,8 +135,7 @@ if __name__ == '__main__':
             'title': clean_text(entry_title),
             'link': entry.get('link', '#'),
             'description': clean_text(entry.get('description', '')),
-            'pubDate': timestamp.format(RFC2822_FORMAT),
-            'pubDateSource': 'generated' if entry_timestamp(entry) is None else 'provided',
+            'pubDate': obj['timestamp'].format(RFC2822_FORMAT),
             'feed': {
                 'title': feed.get('title', ''),
                 'link': feed.get('link', ''),
