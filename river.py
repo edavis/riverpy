@@ -150,4 +150,4 @@ if __name__ == '__main__':
     }
 
     write_river(args.output, river_obj)
-    print('built in %s seconds' % str(time.time() - start))
+    print('\nbuilt in %s seconds' % str(time.time() - start))
