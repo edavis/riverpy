@@ -31,8 +31,6 @@ def entry_fingerprint(feed, entry):
     s = ''.join([feed.feed_url,
                  entry.get('title', ''),
                  entry.get('link', ''),
-                 entry.get('pubDate', ''),
-                 entry.get('description', ''),
                  entry.get('guid', '')]).encode('utf-8', 'ignore')
     return hashlib.sha1(s).hexdigest()
 
