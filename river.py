@@ -85,11 +85,13 @@ def clean_text(text, limit=280, suffix=' ...'):
         return cleaned
 
 
-def write_river(fname, obj):
+def write_river(fname, obj, callback='loadRiver'):
     s = StringIO()
-    s.write('loadRiver(')
+    if callback:
+        s.write('%s(' % callback)
     json.dump(obj, s, sort_keys=True)
-    s.write(')')
+    if callback:
+        s.write(')')
     with open(fname, 'w') as fp:
         fp.write(s.getvalue())
 
