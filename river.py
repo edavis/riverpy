@@ -164,7 +164,7 @@ if __name__ == '__main__':
             'pubDate': obj['timestamp'].format(RFC2822_FORMAT),
             'feed': {
                 'title': feed.get('title', ''),
-                'link': feed.get('link', ''),
+                'website': feed.get('link', ''),
                 'url': obj['url'],
             },
         })
