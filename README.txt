@@ -3,9 +3,6 @@ riverpy -- Generate river.js files with Python
 river.py takes an OPML subscription list (local or remote), parses the
 linked RSS/Atom URLs, and outputs a river.js file.
 
-N.B. The project is still a work-in-progress, so the output files
-     don't exactly match the specification. But the basic idea is there.
-
 Installation:
   1) install/configure redis
   2) pip install -r requirements.txt
