@@ -77,20 +77,9 @@ class ParseFeed(threading.Thread):
                     entry_description = entry.get('description', '')
                     entry_link = entry.get('link', '')
 
-                    # Only use guid when it looks like a URL
-                    #
-                    # Note: I think in theory URIs can also start with
-                    # http:// but I don't think I've ever seen that in
-                    # the wild
-                    guid = entry.get('guid', '')
-                    if guid and guid.startswith(('http://', 'https://')):
-                        entry_permalink = guid
-                    else:
-                        entry_permalink = ''
-
                     obj = {
                         'link': entry_link,
-                        'permaLink': entry_permalink,
+                        'permaLink': '',
                         'pubDate': entry_timestamp(entry).format(constants.RFC2822_FORMAT),
                         'title': clean_text(entry_title or entry_description),
                         'id': str(redis_client.incr('riverpy:next:entry')),
