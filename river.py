@@ -13,6 +13,7 @@ from cStringIO import StringIO
 
 import arrow
 import redis
+import requests
 
 from download import ParseFeed
 import constants
