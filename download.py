@@ -91,10 +91,7 @@ class ParseFeed(threading.Thread):
                     # But if entry.title doesn't exist, we're already
                     # using entry.description as the item.title so
                     # don't duplicate in item.body.
-                    if entry_title:
-                        obj['body'] = clean_text(entry_description)
-                    else:
-                        obj['body'] = ''
+                    obj['body'] = clean_text(entry_description) if entry_title else ''
 
                     entry_comments = entry.get('comments')
                     if entry_comments:
