@@ -74,7 +74,8 @@ def sort_entries(parsed_feeds, args):
                 continue
             redis_client.lpush('entries', cPickle.dumps(obj))
             redis_client.ltrim('entries', 0, OUTPUT_LIMIT + 1)
-    return redis_client.lrange('entries', 0, OUTPUT_LIMIT + 1)
+    entries = redis_client.lrange('entries', 0, OUTPUT_LIMIT + 1)
+    return iter([cPickle.loads(entry) for entry in entries])
 
 
 def clean_text(text, limit=280, suffix=' ...'):
@@ -154,8 +155,7 @@ if __name__ == '__main__':
 
     entries = sort_entries(parsed_feeds, args)
     river_entries = []
-    for pickled_obj in entries:
-        obj = cPickle.loads(pickled_obj)
+    for obj in entries:
         entry = obj['entry']
         feed = obj['feed']
         entry_title = entry.get('title', '') or entry.get('description', '')
