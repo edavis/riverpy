@@ -14,7 +14,6 @@ Installation:
 TODO:
   - Have river.py take care of "publishing" the resulting files (e.g.,
     copying to Amazon S3)
-  - Implement the river.js specification more fully
   - Subscribe to OPML subscription lists just like RSS feeds
   - Create a web frontend to render the river.js files
   - Use a configuration file instead of hardcoded values

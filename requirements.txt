@@ -1,8 +1,13 @@
+Pygments==1.6
 arrow==0.4.2
 bleach==1.2.2
 feedparser==5.1.3
 html5lib==0.95
+httpie==0.7.2
 lxml==3.2.4
+mock==1.0.1
+py==1.4.19
+pytest==2.5.1
 python-dateutil==2.2
 redis==2.8.0
 requests==2.1.0
