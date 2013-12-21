@@ -105,5 +105,8 @@ if __name__ == '__main__':
             'version': '3',
         },
     }
+    if args.opml.startswith(('http://', 'https://')):
+        river_obj['metadata']['source'] = args.opml
+
     write_river(args.output, river_obj)
     print('took %s seconds' % elapsed)
