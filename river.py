@@ -73,8 +73,8 @@ def sort_entries(parsed_feeds, args):
             if args.initial and not entry_is_recent(entry):
                 continue
             redis_client.lpush('entries', cPickle.dumps(obj))
-            redis_client.ltrim('entries', 0, OUTPUT_LIMIT)
-    return redis_client.lrange('entries', 0, OUTPUT_LIMIT)
+            redis_client.ltrim('entries', 0, OUTPUT_LIMIT + 1)
+    return redis_client.lrange('entries', 0, OUTPUT_LIMIT + 1)
 
 
 def clean_text(text, limit=280, suffix=' ...'):
