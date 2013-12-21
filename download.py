@@ -85,7 +85,8 @@ class ParseFeed(threading.Thread):
                         'id': str(redis_client.incr('riverpy:next:entry')),
                     }
 
-                    # entry.title gets first crack at being item.title in the river.
+                    # entry.title gets first crack at being item.title
+                    # in the river.
                     #
                     # But if entry.title doesn't exist, we're already
                     # using entry.description as the item.title so
