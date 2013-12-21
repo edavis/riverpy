@@ -27,6 +27,30 @@ THREADS = 8
 OUTPUT_LIMIT = 250
 
 
+def entry_timestamp(entry):
+    """
+    Return an entry's timestamp as best that can be figured.
+
+    If no timestamp can be found, return the current time.
+    """
+    for key in ['published_parsed', 'updated_parsed', 'created_parsed']:
+        if key not in entry: continue
+        if entry[key] is None: continue
+        val = (entry[key])[:6]
+        reported_timestamp = arrow.get(datetime(*val))
+        if reported_timestamp < arrow.utcnow():
+            return reported_timestamp
+    return arrow.utcnow()
+
+
+def entry_is_recent(entry, hours=24):
+    """
+    Return True if an entry was published less than `hours` ago.
+    """
+    now = arrow.utcnow()
+    return entry_timestamp(entry) > now.replace(hours=-hours)
+
+
 def entry_fingerprint(feed, entry):
     s = ''.join([feed.feed_url,
                  entry.get('title', ''),
@@ -36,16 +60,18 @@ def entry_fingerprint(feed, entry):
     return hashlib.sha1(s).hexdigest()
 
 
-def sort_entries(parsed_feeds):
+def sort_entries(parsed_feeds, args):
     redis_client = redis.StrictRedis()
     for feed in parsed_feeds:
-        for entry in feed.entries:
+        for entry in reversed(feed.entries):
             fingerprint = entry_fingerprint(feed, entry)
             if redis_client.sismember('fingerprints', fingerprint):
                 continue
             redis_client.sadd('fingerprints', fingerprint)
             obj = {'feed': feed.feed, 'entry': entry,
                    'url': feed.feed_url, 'timestamp': arrow.utcnow()}
+            if args.initial and not entry_is_recent(entry):
+                continue
             redis_client.lpush('entries', cPickle.dumps(obj))
             redis_client.ltrim('entries', 0, OUTPUT_LIMIT)
     return redis_client.lrange('entries', 0, OUTPUT_LIMIT)
@@ -92,6 +118,7 @@ def parse_subscription_list(location):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--output', default='river.js')
+    parser.add_argument('--initial', action="store_true")
     parser.add_argument('opml')
     args = parser.parse_args()
 
@@ -123,7 +150,7 @@ if __name__ == '__main__':
     while not outbox.empty():
         parsed_feeds.append(outbox.get_nowait())
 
-    entries = sort_entries(parsed_feeds)
+    entries = sort_entries(parsed_feeds, args)
     river_entries = []
     for pickled_obj in entries:
         obj = cPickle.loads(pickled_obj)
