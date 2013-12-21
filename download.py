@@ -50,9 +50,14 @@ def clean_text(text, limit=280, suffix=' ...'):
 
 
 class ParseFeed(threading.Thread):
-    def __init__(self, inbox):
+    def __init__(self, opml, inbox):
         threading.Thread.__init__(self)
         self.inbox = inbox
+
+        river_prefix = 'riverpy:%s' % hashlib.sha1(opml).hexdigest()
+        self.river_fingerprints = ':'.join([river_prefix, 'fingerprints'])
+        self.river_entries = ':'.join([river_prefix, 'entries'])
+        self.river_counter = ':'.join([river_prefix, 'counter'])
 
     def run(self):
         while True:
@@ -69,9 +74,9 @@ class ParseFeed(threading.Thread):
                 items = []
                 for entry in doc.entries:
                     fingerprint = entry_fingerprint(url, entry)
-                    if redis_client.sismember('riverpy:fingerprints', fingerprint):
+                    if redis_client.sismember(self.river_fingerprints, fingerprint):
                         continue
-                    redis_client.sadd('riverpy:fingerprints', fingerprint)
+                    redis_client.sadd(self.river_fingerprints, fingerprint)
 
                     entry_title = entry.get('title', '')
                     entry_description = entry.get('description', '')
@@ -82,7 +87,7 @@ class ParseFeed(threading.Thread):
                         'permaLink': '',
                         'pubDate': entry_timestamp(entry).format(constants.RFC2822_FORMAT),
                         'title': clean_text(entry_title or entry_description),
-                        'id': str(redis_client.incr('riverpy:next:entry')),
+                        'id': str(redis_client.incr(self.river_counter)),
                     }
 
                     # entry.title gets first crack at being item.title
@@ -110,7 +115,7 @@ class ParseFeed(threading.Thread):
                         'websiteUrl': doc.feed.get('link', ''),
                         'whenLastUpdate': arrow.utcnow().format(constants.RFC2822_FORMAT),
                     }
-                    redis_client.lpush('riverpy:entries', cPickle.dumps(obj))
-                    redis_client.ltrim('riverpy:entries', 0, constants.OUTPUT_LIMIT + 1)
+                    redis_client.lpush(self.river_entries, cPickle.dumps(obj))
+                    redis_client.ltrim(self.river_entries, 0, constants.OUTPUT_LIMIT + 1)
             finally:
                 self.inbox.task_done()

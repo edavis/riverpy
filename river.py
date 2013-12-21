@@ -5,6 +5,7 @@ import json
 import time
 import Queue
 import random
+import hashlib
 import cPickle
 import argparse
 from lxml import etree
@@ -71,8 +72,13 @@ if __name__ == '__main__':
 
     inbox = Queue.Queue()
 
+    if os.path.exists(args.opml):
+        opml_location = os.path.abspath(args.opml)
+    else:
+        opml_location = args.opml
+
     for _ in range(thread_count):
-        p = ParseFeed(inbox)
+        p = ParseFeed(opml_location, inbox)
         p.daemon = True
         p.start()
 
@@ -81,7 +87,9 @@ if __name__ == '__main__':
         inbox.put(url)
     inbox.join()
 
-    pickled_objs = redis_client.lrange('riverpy:entries', 0, constants.OUTPUT_LIMIT + 1)
+    river_prefix = 'riverpy:%s' % hashlib.sha1(opml_location).hexdigest()
+    river_entries = ':'.join([river_prefix, 'entries'])
+    pickled_objs = redis_client.lrange(river_entries, 0, constants.OUTPUT_LIMIT + 1)
     entries = [cPickle.loads(obj) for obj in pickled_objs]
     current = arrow.utcnow()
     elapsed = str(round(time.time() - start, 2))
