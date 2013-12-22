@@ -11,16 +11,23 @@ import argparse
 from lxml import etree
 from datetime import datetime
 from cStringIO import StringIO
+from ConfigParser import SafeConfigParser
 
 import arrow
 import redis
 import requests
 
 from download import ParseFeed
-import constants
+import utils
 
 
 redis_client = redis.Redis()
+
+
+def read_config(*filenames):
+    config = SafeConfigParser()
+    config.read(filenames)
+    return config
 
 
 def write_river(fname, obj, callback='onGetRiverStream'):
@@ -57,28 +64,28 @@ def parse_subscription_list(location):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output', default='river.js')
-    parser.add_argument('opml')
+    parser.add_argument('-o', '--output')
+    parser.add_argument('config')
     args = parser.parse_args()
 
     start = time.time()
-    feed_urls = list(parse_subscription_list(args.opml))
+
+    config = read_config(args.config)
+    opml = config.get('river', 'opml')
+
+    feed_urls = list(parse_subscription_list(opml))
 
     # Don't create more threads than there are URLs
     feed_count = len(feed_urls)
-    thread_count = min(feed_count, constants.THREADS)
+    thread_count = min(feed_count, config.getint('limits', 'threads'))
 
     print('parsing %d feeds with %d threads' % (feed_count, thread_count))
 
     inbox = Queue.Queue()
-
-    if os.path.exists(args.opml):
-        opml_location = os.path.abspath(args.opml)
-    else:
-        opml_location = args.opml
+    opml_location = os.path.abspath(opml) if os.path.exists(opml) else opml
 
     for _ in range(thread_count):
-        p = ParseFeed(opml_location, inbox)
+        p = ParseFeed(opml_location, config, inbox)
         p.daemon = True
         p.start()
 
@@ -104,14 +111,14 @@ if __name__ == '__main__':
         },
         'metadata': {
             'docs': 'http://riverjs.org/',
-            'whenGMT': current.format(constants.RFC2822_FORMAT),
-            'whenLocal': current.to('local').format(constants.RFC2822_FORMAT),
+            'whenGMT': utils.format_timestamp(current),
+            'whenLocal': utils.format_timestamp(current.to('local')),
             'secs': elapsed,
             'version': '3',
         },
     }
-    if args.opml.startswith(('http://', 'https://')):
-        river_obj['metadata']['source'] = args.opml
+    if opml.startswith(('http://', 'https://')):
+        river_obj['metadata']['source'] = opml
 
     write_river(args.output, river_obj)
     print('took %s seconds' % elapsed)

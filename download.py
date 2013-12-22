@@ -10,7 +10,7 @@ import bleach
 import requests
 import feedparser
 
-import constants
+import utils
 
 
 redis_client = redis.Redis()
@@ -50,9 +50,10 @@ def clean_text(text, limit=280, suffix=' ...'):
 
 
 class ParseFeed(threading.Thread):
-    def __init__(self, opml, inbox):
+    def __init__(self, opml, config, inbox):
         threading.Thread.__init__(self)
         self.inbox = inbox
+        self.config = config
 
         river_prefix = 'riverpy:%s' % hashlib.sha1(opml).hexdigest()
         self.river_fingerprints = ':'.join([river_prefix, 'fingerprints'])
@@ -85,7 +86,7 @@ class ParseFeed(threading.Thread):
                     obj = {
                         'link': entry_link,
                         'permaLink': '',
-                        'pubDate': entry_timestamp(entry).format(constants.RFC2822_FORMAT),
+                        'pubDate': utils.format_timestamp(entry_timestamp(entry)),
                         'title': clean_text(entry_title or entry_description),
                         'id': str(redis_client.incr(self.river_counter)),
                     }
@@ -109,7 +110,8 @@ class ParseFeed(threading.Thread):
                 # First time we've seen this URL in this OPML file.
                 # Only keep the first INITIAL_ITEM_LIMIT items.
                 if not redis_client.sismember(self.river_urls, url):
-                    items = items[:constants.INITIAL_ITEM_LIMIT]
+                    limit = self.config.getint('limits', 'initial')
+                    items = items[:limit]
                     redis_client.sadd(self.river_urls, url)
 
                 if items:
@@ -120,9 +122,10 @@ class ParseFeed(threading.Thread):
                         'feedUrl': url,
                         'item': items,
                         'websiteUrl': doc.feed.get('link', ''),
-                        'whenLastUpdate': arrow.utcnow().format(constants.RFC2822_FORMAT),
+                        'whenLastUpdate': utils.format_timestamp(arrow.utcnow()),
                     }
+                    limit = self.config.getint('limits', 'entries') + 1
                     redis_client.lpush(self.river_entries, cPickle.dumps(obj))
-                    redis_client.ltrim(self.river_entries, 0, constants.ENTRIES_LIMIT + 1)
+                    redis_client.ltrim(self.river_entries, 0, limit)
             finally:
                 self.inbox.task_done()
