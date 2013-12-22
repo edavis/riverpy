@@ -58,6 +58,7 @@ class ParseFeed(threading.Thread):
         self.river_fingerprints = ':'.join([river_prefix, 'fingerprints'])
         self.river_entries = ':'.join([river_prefix, 'entries'])
         self.river_counter = ':'.join([river_prefix, 'counter'])
+        self.river_urls = ':'.join([river_prefix, 'urls'])
 
     def run(self):
         while True:
@@ -105,6 +106,12 @@ class ParseFeed(threading.Thread):
                     # TODO add enclosure/thumbnail
 
                     items.append(obj)
+
+                # First time we've seen this URL in this OPML file.
+                # Only keep the first INITIAL_ITEM_LIMIT items.
+                if not redis_client.sismember(self.river_urls, url):
+                    items = items[:constants.INITIAL_ITEM_LIMIT]
+                    redis_client.sadd(self.river_urls, url)
 
                 if items:
                     obj = {
