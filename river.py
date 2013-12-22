@@ -91,8 +91,9 @@ if __name__ == '__main__':
     river_entries = ':'.join([river_prefix, 'entries'])
     pickled_objs = redis_client.lrange(river_entries, 0, constants.OUTPUT_LIMIT + 1)
     entries = [cPickle.loads(obj) for obj in pickled_objs]
+
     current = arrow.utcnow()
-    elapsed = str(round(time.time() - start, 2))
+    elapsed = str(round(time.time() - start, 3))
     river_obj = {
         'updatedFeeds': {
             'updatedFeed': entries,
