@@ -73,7 +73,7 @@ class ParseFeed(threading.Thread):
                     response = requests.get(url, timeout=10)
                     response.raise_for_status()
                     feed_content = response.content
-                    redis_client.set(feed_cache_key, feed_content, ex=60*5)
+                    redis_client.set(feed_cache_key, feed_content, ex=60*15)
             except requests.exceptions.RequestException as ex:
                 sys.stderr.write('[% -8s] *** skipping %s: %s\n' % (self.getName(), url, str(ex)))
             else:
