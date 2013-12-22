@@ -87,10 +87,14 @@ if __name__ == '__main__':
         inbox.put(url)
     inbox.join()
 
+    # TODO this should be moved to a utility function and shared with ParseFeed
     river_prefix = 'riverpy:%s' % hashlib.sha1(opml_location).hexdigest()
     river_entries = ':'.join([river_prefix, 'entries'])
-    pickled_objs = redis_client.lrange(river_entries, 0, constants.OUTPUT_LIMIT + 1)
+
+    pickled_objs = redis_client.lrange(river_entries, 0, -1)
     entries = [cPickle.loads(obj) for obj in pickled_objs]
+    count = sum([len(obj['item']) for obj in entries])
+    print('item count = %d' % count)
 
     current = arrow.utcnow()
     elapsed = str(round(time.time() - start, 3))

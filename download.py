@@ -116,6 +116,6 @@ class ParseFeed(threading.Thread):
                         'whenLastUpdate': arrow.utcnow().format(constants.RFC2822_FORMAT),
                     }
                     redis_client.lpush(self.river_entries, cPickle.dumps(obj))
-                    redis_client.ltrim(self.river_entries, 0, constants.OUTPUT_LIMIT + 1)
+                    redis_client.ltrim(self.river_entries, 0, constants.ENTRIES_LIMIT + 1)
             finally:
                 self.inbox.task_done()
