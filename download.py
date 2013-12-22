@@ -68,9 +68,8 @@ class ParseFeed(threading.Thread):
             try:
                 hashed_url = hashlib.sha1(url).hexdigest()
                 feed_cache_key = ':'.join([self.feed_cache_prefix, hashed_url])
-                if redis_client.exists(feed_cache_key):
-                    feed_content = redis_client.get(feed_cache_key)
-                else:
+                feed_content = redis_client.get(feed_cache_key)
+                if feed_content is None:
                     response = requests.get(url, timeout=10)
                     response.raise_for_status()
                     feed_content = response.content
