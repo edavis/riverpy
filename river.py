@@ -94,8 +94,7 @@ if __name__ == '__main__':
     pickled_objs = redis_client.lrange(river_entries, 0, -1)
     entries = [cPickle.loads(obj) for obj in pickled_objs]
     count = sum([len(obj['item']) for obj in entries])
-    print('updatedFeed count = %d' % len(entries))
-    print('item count = %d' % count)
+    print('%d feed updates with %d items' % (len(entries), count))
 
     current = arrow.utcnow()
     elapsed = str(round(time.time() - start, 3))
