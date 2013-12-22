@@ -10,7 +10,6 @@ Installation:
 
 TODO:
   - Subscribe to OPML subscription lists just like RSS feeds
-  - Create a web frontend to render the river.js files
   - Package and upload to PyPI
 
 Links:
