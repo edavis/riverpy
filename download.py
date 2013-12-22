@@ -66,12 +66,11 @@ class ParseFeed(threading.Thread):
             try:
                 response = requests.get(url, timeout=10)
                 response.raise_for_status()
+                feed_content = response.content
             except requests.exceptions.RequestException as ex:
                 sys.stderr.write('[% -8s] *** skipping %s: %s\n' % (self.getName(), url, str(ex)))
-                sys.stderr.flush()
             else:
-                doc = feedparser.parse(response.content)
-                sys.stdout.write('[% -8s] %s (%d entries)\n' % (self.getName(), url, len(doc.entries)))
+                doc = feedparser.parse(feed_content)
                 items = []
                 for entry in doc.entries:
                     fingerprint = entry_fingerprint(url, entry)
@@ -114,6 +113,7 @@ class ParseFeed(threading.Thread):
                     redis_client.sadd(self.river_urls, url)
 
                 if items:
+                    sys.stdout.write('[% -8s] %s (%d entries)\n' % (self.getName(), url, len(items)))
                     obj = {
                         'feedDescription': doc.feed.get('description', ''),
                         'feedTitle': doc.feed.get('title', ''),
