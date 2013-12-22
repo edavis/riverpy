@@ -74,6 +74,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--url')
     parser.add_argument('-s', '--source')
     parser.add_argument('-c', '--clear', action='store_true')
+    parser.add_argument('--clear-all', action='store_true')
     parser.add_argument('config')
     args = parser.parse_args()
 
@@ -81,6 +82,7 @@ if __name__ == '__main__':
     config = read_config(args.config)
 
     urls = []
+    keys = ['fingerprints', 'entries', 'counter', 'urls']
     sources = config.get('river', 'sources').strip()
     for source in sources.splitlines():
         (opml_url, output_prefix) = source.split(' -> ', 1)
@@ -91,10 +93,14 @@ if __name__ == '__main__':
         # OPML file.
         if args.clear and args.source == output_prefix:
             print('clearing everything we know about %s' % output_prefix)
-            keys = ['fingerprints', 'entries', 'counter', 'urls']
             redis_keys = [utils.river_key(opml_url, key) for key in keys]
             redis_client.delete(*redis_keys)
         urls.append((opml_url, output_prefix))
+
+    if args.clear_all:
+        for (opml, source) in urls:
+            redis_keys = [utils.river_key(opml, key) for key in keys]
+            redis_client.delete(*redis_keys)
 
     for opml_url, output_prefix in urls:
         if args.url:
