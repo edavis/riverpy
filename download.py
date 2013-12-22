@@ -115,7 +115,7 @@ class ParseFeed(threading.Thread):
                     redis_client.sadd(self.river_urls, url)
 
                 if items:
-                    sys.stdout.write('[% -8s] %s (%d entries)\n' % (self.getName(), url, len(items)))
+                    sys.stdout.write('[% -8s] %s (%d new)\n' % (self.getName(), url, len(items)))
                     obj = {
                         'feedDescription': doc.feed.get('description', ''),
                         'feedTitle': doc.feed.get('title', ''),
