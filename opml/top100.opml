@@ -70,7 +70,6 @@
 	<outline text="IEBlog" title="IEBlog" type="rss" xmlUrl="http://blogs.msdn.com/ie/Rss.aspx" htmlUrl="http://blogs.msdn.com/ie/default.aspx"/>
 	<outline text="VentureBlog" title="VentureBlog" type="rss" xmlUrl="http://feeds.feedburner.com/ventureblog" htmlUrl="http://p6.hostingprod.com/@www.ventureblog.com/"/>
 	<outline text="Cool Tools" title="Cool Tools" type="rss" xmlUrl="http://www.kk.org/cooltools/index.xml" htmlUrl="http://www.kk.org/cooltools/"/>
-	<outline text="Vitamin" title="Vitamin" type="rss" xmlUrl="http://feeds.feedburner.com/vitaminmasterfeed" htmlUrl="http://www.thinkvitamin.com"/>
 	<outline text="Creating Passionate Users" title="Creating Passionate Users" type="rss" xmlUrl="http://headrush.typepad.com/creating_passionate_users/atom.xml" htmlUrl="http://headrush.typepad.com/creating_passionate_users/"/>
 	<outline text="Let the Good Times Roll by Guy Kawasaki" title="Let the Good Times Roll by Guy Kawasaki" type="rss" xmlUrl="http://feeds.feedburner.com/letTheGoodTimesRollByGuyKawasaki" htmlUrl="http://blog.guykawasaki.com/"/>
 	<outline text="PVRblog" title="PVRblog" type="rss" xmlUrl="http://www.pvrblog.com/pvr/index.rdf" htmlUrl="http://www.pvrblog.com/pvr/"/>
