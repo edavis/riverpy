@@ -77,7 +77,11 @@ class ParseFeed(threading.Thread):
             except requests.exceptions.RequestException as ex:
                 sys.stderr.write('[% -8s] *** skipping %s: %s\n' % (self.getName(), url, str(ex)))
             else:
-                doc = feedparser.parse(feed_content)
+                try:
+                    doc = feedparser.parse(feed_content)
+                except ValueError as ex:
+                    sys.stderr.write('[% -8s] *** failed parsing %s: %s\n' % (self.getName(), url, str(ex)))
+                    break
                 items = []
                 for entry in doc.entries:
                     fingerprint = entry_fingerprint(entry)
