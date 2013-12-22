@@ -76,60 +76,63 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     start = time.time()
-
     config = read_config(args.config)
-    opml = config.get('river', 'opml')
 
-    if args.url:
-        feed_urls = [args.url]
-    else:
-        feed_urls = list(parse_subscription_list(opml))
+    urls = []
+    sources = config.get('river', 'sources').strip()
+    for source in sources.splitlines():
+        (opml_url, output_prefix) = source.split(' -> ', 1)
+        urls.append((opml_url, output_prefix))
 
-    # Don't create more threads than there are URLs
-    feed_count = len(feed_urls)
-    thread_count = min(feed_count, config.getint('limits', 'threads'))
+    for opml_url, output_prefix in urls:
+        if args.url:
+            feed_urls = [args.url]
+        else:
+            feed_urls = list(parse_subscription_list(opml_url))
 
-    print('parsing %d feeds with %d threads' % (feed_count, thread_count))
+        # Don't create more threads than there are URLs
+        feed_count = len(feed_urls)
+        thread_count = min(feed_count, config.getint('limits', 'threads'))
 
-    inbox = Queue.Queue()
-    opml_location = os.path.abspath(opml) if os.path.exists(opml) else opml
+        print('parsing %d feeds with %d threads' % (feed_count, thread_count))
 
-    for _ in range(thread_count):
-        p = ParseFeed(opml_location, config, inbox)
-        p.daemon = True
-        p.start()
+        inbox = Queue.Queue()
 
-    random.shuffle(feed_urls)
-    for url in feed_urls:
-        inbox.put(url)
-    inbox.join()
+        for _ in range(thread_count):
+            p = ParseFeed(opml_url, config, inbox)
+            p.daemon = True
+            p.start()
 
-    river_entries = utils.river_key(opml_location, 'entries')
-    pickled_objs = redis_client.lrange(river_entries, 0, -1)
-    entries = [cPickle.loads(obj) for obj in pickled_objs]
-    count = sum([len(obj['item']) for obj in entries])
-    print('%d feed updates with %d items' % (len(entries), count))
+        random.shuffle(feed_urls)
+        for url in feed_urls:
+            inbox.put(url)
+        inbox.join()
 
-    current = arrow.utcnow()
-    elapsed = str(round(time.time() - start, 3))
-    river_obj = {
-        'updatedFeeds': {
-            'updatedFeed': entries,
-        },
-        'metadata': {
-            'docs': 'http://riverjs.org/',
-            'whenGMT': utils.format_timestamp(current),
-            'whenLocal': utils.format_timestamp(current.to('local')),
-            'secs': elapsed,
-            'version': '3',
-        },
-    }
-    if opml.startswith(('http://', 'https://')):
-        river_obj['metadata']['source'] = opml
+        river_entries = utils.river_key(opml_url, 'entries')
+        pickled_objs = redis_client.lrange(river_entries, 0, -1)
+        entries = [cPickle.loads(obj) for obj in pickled_objs]
+        count = sum([len(obj['item']) for obj in entries])
+        print('%d feed updates with %d items' % (len(entries), count))
 
-    bucket = config.get('s3', 'bucket')
-    key = config.get('s3', 'filename')
-    riverjs = generate_riverjs(river_obj)
-    write_to_s3(bucket, key, riverjs)
+        current = arrow.utcnow()
+        elapsed = str(round(time.time() - start, 3))
+        river_obj = {
+            'updatedFeeds': {
+                'updatedFeed': entries,
+            },
+            'metadata': {
+                'docs': 'http://riverjs.org/',
+                'whenGMT': utils.format_timestamp(current),
+                'whenLocal': utils.format_timestamp(current.to('local')),
+                'secs': elapsed,
+                'version': '3',
+                'source': opml_url,
+            },
+        }
 
-    print('took %s seconds' % elapsed)
+        bucket = config.get('s3', 'bucket')
+        key = '%s/river.js' % output_prefix
+        riverjs = generate_riverjs(river_obj)
+        write_to_s3(bucket, key, riverjs)
+
+        print('took %s seconds' % elapsed)

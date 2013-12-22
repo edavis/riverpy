@@ -50,16 +50,16 @@ def clean_text(text, limit=280, suffix=' ...'):
 
 
 class ParseFeed(threading.Thread):
-    def __init__(self, opml, config, inbox):
+    def __init__(self, opml_url, config, inbox):
         threading.Thread.__init__(self)
         self.inbox = inbox
         self.config = config
 
-        river_prefix = 'riverpy:%s' % hashlib.sha1(opml).hexdigest()
-        self.river_fingerprints = utils.river_key(opml, 'fingerprints')
-        self.river_entries = utils.river_key(opml, 'entries')
-        self.river_counter = utils.river_key(opml, 'counter')
-        self.river_urls = utils.river_key(opml, 'urls')
+        river_prefix = 'riverpy:%s' % hashlib.sha1(opml_url).hexdigest()
+        self.river_fingerprints = utils.river_key(opml_url, 'fingerprints')
+        self.river_entries = utils.river_key(opml_url, 'entries')
+        self.river_counter = utils.river_key(opml_url, 'counter')
+        self.river_urls = utils.river_key(opml_url, 'urls')
 
     def run(self):
         while True:
