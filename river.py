@@ -74,6 +74,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--url')
     parser.add_argument('-s', '--source')
     parser.add_argument('-c', '--clear', action='store_true')
+    parser.add_argument('--no-download', action='store_true', help='Don\'t download feeds, only rebuild river.js file(s)')
     parser.add_argument('--clear-all', action='store_true')
     parser.add_argument('config')
     args = parser.parse_args()
@@ -105,28 +106,31 @@ if __name__ == '__main__':
     for opml_url, output_prefix in urls:
         print('generating river for %s' % output_prefix)
 
-        if args.url:
-            feed_urls = [args.url]
+        if not args.no_download:
+            if args.url:
+                feed_urls = [args.url]
+            else:
+                feed_urls = list(parse_subscription_list(opml_url))
+
+            # Don't create more threads than there are URLs
+            feed_count = len(feed_urls)
+            thread_count = min(feed_count, config.getint('limits', 'threads'))
+
+            print('parsing %d feeds with %d threads' % (feed_count, thread_count))
+
+            inbox = Queue.Queue()
+
+            for _ in range(thread_count):
+                p = ParseFeed(opml_url, config, inbox)
+                p.daemon = True
+                p.start()
+
+            random.shuffle(feed_urls)
+            for url in feed_urls:
+                inbox.put(url)
+            inbox.join()
         else:
-            feed_urls = list(parse_subscription_list(opml_url))
-
-        # Don't create more threads than there are URLs
-        feed_count = len(feed_urls)
-        thread_count = min(feed_count, config.getint('limits', 'threads'))
-
-        print('parsing %d feeds with %d threads' % (feed_count, thread_count))
-
-        inbox = Queue.Queue()
-
-        for _ in range(thread_count):
-            p = ParseFeed(opml_url, config, inbox)
-            p.daemon = True
-            p.start()
-
-        random.shuffle(feed_urls)
-        for url in feed_urls:
-            inbox.put(url)
-        inbox.join()
+            print('not downloading feeds')
 
         river_entries = utils.river_key(opml_url, 'entries')
         pickled_objs = redis_client.lrange(river_entries, 0, -1)
