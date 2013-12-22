@@ -155,7 +155,7 @@ if __name__ == '__main__':
         }
 
         bucket = config.get('s3', 'bucket')
-        key = '%s/river.js' % output_prefix
+        key = 'rivers/%s.js' % output_prefix
         riverjs = generate_riverjs(river_obj)
         write_to_s3(bucket, key, riverjs)
 
