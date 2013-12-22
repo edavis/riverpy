@@ -61,13 +61,21 @@ class ParseFeed(threading.Thread):
         self.river_counter = utils.river_key(opml_url, 'counter')
         self.river_urls = utils.river_key(opml_url, 'urls')
 
+        self.feed_cache_prefix = 'riverpy:feed_cache'
+
     def run(self):
         while True:
             url = self.inbox.get()
             try:
-                response = requests.get(url, timeout=10)
-                response.raise_for_status()
-                feed_content = response.content
+                hashed_url = hashlib.sha1(url).hexdigest()
+                feed_cache_key = ':'.join([self.feed_cache_prefix, hashed_url])
+                if redis_client.exists(feed_cache_key):
+                    feed_content = redis_client.get(feed_cache_key)
+                else:
+                    response = requests.get(url, timeout=10)
+                    response.raise_for_status()
+                    feed_content = response.content
+                    redis_client.set(feed_cache_key, feed_content, ex=60*5)
             except requests.exceptions.RequestException as ex:
                 sys.stderr.write('[% -8s] *** skipping %s: %s\n' % (self.getName(), url, str(ex)))
             else:
