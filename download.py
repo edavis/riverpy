@@ -32,9 +32,8 @@ def entry_timestamp(entry):
     return arrow.utcnow()
 
 
-def entry_fingerprint(url, entry):
-    s = ''.join([url,
-                 entry.get('title', ''),
+def entry_fingerprint(entry):
+    s = ''.join([entry.get('title', ''),
                  entry.get('link', ''),
                  entry.get('guid', '')])
     s = s.encode('utf-8', 'ignore')
@@ -82,7 +81,7 @@ class ParseFeed(threading.Thread):
                 doc = feedparser.parse(feed_content)
                 items = []
                 for entry in doc.entries:
-                    fingerprint = entry_fingerprint(url, entry)
+                    fingerprint = entry_fingerprint(entry)
                     if redis_client.sismember(self.river_fingerprints, fingerprint):
                         continue
                     redis_client.sadd(self.river_fingerprints, fingerprint)
