@@ -156,3 +156,7 @@ if __name__ == '__main__':
         write_to_s3(bucket, key, riverjs)
 
         print('took %s seconds' % elapsed)
+
+        # Print an empty line if we're hitting multiple feed lists
+        if not args.source:
+            print
