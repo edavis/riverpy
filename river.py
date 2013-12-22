@@ -13,6 +13,7 @@ from datetime import datetime
 from cStringIO import StringIO
 from ConfigParser import SafeConfigParser
 
+import boto
 import arrow
 import redis
 import requests
@@ -30,15 +31,18 @@ def read_config(*filenames):
     return config
 
 
-def write_river(fname, obj, callback='onGetRiverStream'):
+def write_river(bucket_name, key_name, obj):
     s = StringIO()
-    if callback:
-        s.write('%s(' % callback)
+    s.write('onGetRiverStream(')
     json.dump(obj, s, sort_keys=True)
-    if callback:
-        s.write(')')
-    with open(fname, 'w') as fp:
-        fp.write(s.getvalue())
+    s.write(')')
+
+    s3 = boto.connect_s3()
+    bucket = s3.get_bucket(bucket_name) # TODO create if doesn't exist
+    key = bucket.new_key(key_name)
+    key.set_metadata('Content-Type', 'application/json')
+    key.set_contents_from_string(s.getvalue())
+    key.set_acl('public-read')
 
 
 def parse_subscription_list(location):
@@ -64,7 +68,6 @@ def parse_subscription_list(location):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output')
     parser.add_argument('config')
     args = parser.parse_args()
 
@@ -117,5 +120,7 @@ if __name__ == '__main__':
     if opml.startswith(('http://', 'https://')):
         river_obj['metadata']['source'] = opml
 
-    write_river(args.output, river_obj)
+    bucket = config.get('s3', 'bucket')
+    key = config.get('s3', 'filename')
+    write_river(bucket, key, river_obj)
     print('took %s seconds' % elapsed)
