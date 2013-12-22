@@ -59,7 +59,6 @@
 	<outline text="kottke.org" title="kottke.org" type="rss" xmlUrl="http://www.kottke.org/index.xml" htmlUrl="http://www.kottke.org/"/>
 	<outline text="CNET News.com" title="CNET News.com" type="rss" xmlUrl="http://news.com.com/2547-1_3-0-20.xml" htmlUrl="http://news.com.com/"/>
 	<outline text="ScottGu's Blog" title="ScottGu's Blog" type="rss" xmlUrl="http://weblogs.asp.net/scottgu/rss.aspx" htmlUrl="http://weblogs.asp.net/scottgu/"/>
-	<outline text="Signal vs. Noise" title="Signal vs. Noise" type="rss" xmlUrl="http://37signals.com/svn/index_full.rdf" htmlUrl="http://37signals.com/svn/"/>
 	<outline text="Programmable Web" title="Programmable Web" type="rss" xmlUrl="http://feeds.feedburner.com/ProgrammableWeb" htmlUrl="http://blog.programmableweb.com"/>
 	<outline text="Niall Kennedy's Weblog" title="Niall Kennedy's Weblog" type="rss" xmlUrl="http://www.niallkennedy.com/blog/index.xml" htmlUrl="http://www.niallkennedy.com/blog/"/>
 	<outline text="ongoing" title="ongoing" type="rss" xmlUrl="http://www.tbray.org/ongoing/ongoing.atom" htmlUrl="http://www.tbray.org/ongoing/"/>
@@ -80,7 +79,6 @@
 	<outline text="ranchero.com" title="ranchero.com" type="rss" xmlUrl="http://ranchero.com/xml/rss.xml" htmlUrl="http://ranchero.com/"/>
 	<outline text="Dilbert" title="Dilbert" type="rss" xmlUrl="http://feeds.feedburner.com/tapestrydilbert" htmlUrl="http://www.dilbert.com/"/>
 	<outline text="456 Berea Street" title="456 Berea Street" type="rss" xmlUrl="http://www.456bereastreet.com/feed.xml" htmlUrl="http://www.456bereastreet.com/"/>
-	<outline text="Ars Technica" title="Ars Technica" type="rss" xmlUrl="http://arstechnica.com/etc/rdf/ars.rdf" htmlUrl="http://arstechnica.com"/>
 	<outline text="Seth's Blog" title="Seth's Blog" type="rss" xmlUrl="http://sethgodin.typepad.com/seths_blog/atom.xml" htmlUrl="http://sethgodin.typepad.com/seths_blog/"/>
 	<outline text="The Social Software Weblog" title="The Social Software Weblog" type="rss" xmlUrl="http://socialsoftware.weblogsinc.com/rss.xml" htmlUrl="http://socialsoftware.weblogsinc.com/"/>
 	<outline text="Seth's Blog" title="Seth's Blog" type="rss" xmlUrl="http://sethgodin.typepad.com/seths_blog/index.rdf" htmlUrl="http://sethgodin.typepad.com/seths_blog/"/>
