@@ -135,7 +135,7 @@ class ParseFeed(threading.Thread):
                         'websiteUrl': doc.feed.get('link', ''),
                         'whenLastUpdate': utils.format_timestamp(arrow.utcnow()),
                     }
-                    limit = self.config.getint('limits', 'entries') + 1
+                    limit = self.config.getint('limits', 'entries') - 1
                     redis_client.lpush(self.river_entries, cPickle.dumps(obj))
                     redis_client.ltrim(self.river_entries, 0, limit)
             finally:
