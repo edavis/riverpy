@@ -103,6 +103,8 @@ if __name__ == '__main__':
             redis_client.delete(*redis_keys)
 
     for opml_url, output_prefix in urls:
+        print('generating river for %s' % output_prefix)
+
         if args.url:
             feed_urls = [args.url]
         else:
