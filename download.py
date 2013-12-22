@@ -56,10 +56,10 @@ class ParseFeed(threading.Thread):
         self.config = config
 
         river_prefix = 'riverpy:%s' % hashlib.sha1(opml).hexdigest()
-        self.river_fingerprints = ':'.join([river_prefix, 'fingerprints'])
-        self.river_entries = ':'.join([river_prefix, 'entries'])
-        self.river_counter = ':'.join([river_prefix, 'counter'])
-        self.river_urls = ':'.join([river_prefix, 'urls'])
+        self.river_fingerprints = utils.river_key(opml, 'fingerprints')
+        self.river_entries = utils.river_key(opml, 'entries')
+        self.river_counter = utils.river_key(opml, 'counter')
+        self.river_urls = utils.river_key(opml, 'urls')
 
     def run(self):
         while True:
