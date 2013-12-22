@@ -99,6 +99,11 @@ class ParseFeed(threading.Thread):
                     # don't duplicate in item.body.
                     obj['body'] = clean_text(entry_description) if entry_title else ''
 
+                    # If entry.title == entry.description, remove
+                    # item.body and just leave item.title
+                    if (entry_title and entry_description) and entry_title == entry_description:
+                        obj['body'] = ''
+
                     entry_comments = entry.get('comments')
                     if entry_comments:
                         obj['comments'] = entry_comments
