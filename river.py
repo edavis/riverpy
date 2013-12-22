@@ -73,6 +73,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', '--url')
     parser.add_argument('-s', '--source')
+    parser.add_argument('-c', '--clear', action='store_true')
     parser.add_argument('config')
     args = parser.parse_args()
 
@@ -86,6 +87,13 @@ if __name__ == '__main__':
         # If we pass --source, only update that particular river
         if args.source and output_prefix != args.source:
             continue
+        # If we pass --clear, forget everything we know about that
+        # OPML file.
+        if args.clear and args.source == output_prefix:
+            print('clearing everything we know about %s' % output_prefix)
+            keys = ['fingerprints', 'entries', 'counter', 'urls']
+            redis_keys = [utils.river_key(opml_url, key) for key in keys]
+            redis_client.delete(*redis_keys)
         urls.append((opml_url, output_prefix))
 
     for opml_url, output_prefix in urls:
