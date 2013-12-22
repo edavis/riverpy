@@ -72,6 +72,7 @@ def parse_subscription_list(location):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', '--url')
+    parser.add_argument('-s', '--source')
     parser.add_argument('config')
     args = parser.parse_args()
 
@@ -82,6 +83,9 @@ if __name__ == '__main__':
     sources = config.get('river', 'sources').strip()
     for source in sources.splitlines():
         (opml_url, output_prefix) = source.split(' -> ', 1)
+        # If we pass --source, only update that particular river
+        if args.source and output_prefix != args.source:
+            continue
         urls.append((opml_url, output_prefix))
 
     for opml_url, output_prefix in urls:
