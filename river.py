@@ -68,6 +68,7 @@ def parse_subscription_list(location):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('-u', '--url')
     parser.add_argument('config')
     args = parser.parse_args()
 
@@ -76,7 +77,10 @@ if __name__ == '__main__':
     config = read_config(args.config)
     opml = config.get('river', 'opml')
 
-    feed_urls = list(parse_subscription_list(opml))
+    if args.url:
+        feed_urls = [args.url]
+    else:
+        feed_urls = list(parse_subscription_list(opml))
 
     # Don't create more threads than there are URLs
     feed_count = len(feed_urls)
