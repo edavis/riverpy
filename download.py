@@ -101,7 +101,7 @@ class ParseFeed(threading.Thread):
 
                     # If entry.title == entry.description, remove
                     # item.body and just leave item.title
-                    if (entry_title and entry_description) and entry_title == entry_description:
+                    if (entry_title and entry_description) and clean_text(entry_title) == clean_text(entry_description):
                         obj['body'] = ''
 
                     entry_comments = entry.get('comments')
