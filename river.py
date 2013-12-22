@@ -31,18 +31,21 @@ def read_config(*filenames):
     return config
 
 
-def write_river(bucket_name, key_name, obj):
+def write_to_s3(bucket_name, key_name, value):
+    conn = boto.connect_s3()
+    bucket = conn.get_bucket(bucket_name) # TODO create if doesn't exist
+    key = bucket.new_key(key_name)
+    key.set_metadata('Content-Type', 'application/json')
+    key.set_contents_from_string(value)
+    key.set_acl('public-read')
+
+
+def generate_riverjs(obj):
     s = StringIO()
     s.write('onGetRiverStream(')
     json.dump(obj, s, sort_keys=True)
     s.write(')')
-
-    s3 = boto.connect_s3()
-    bucket = s3.get_bucket(bucket_name) # TODO create if doesn't exist
-    key = bucket.new_key(key_name)
-    key.set_metadata('Content-Type', 'application/json')
-    key.set_contents_from_string(s.getvalue())
-    key.set_acl('public-read')
+    return s.getvalue()
 
 
 def parse_subscription_list(location):
@@ -126,5 +129,7 @@ if __name__ == '__main__':
 
     bucket = config.get('s3', 'bucket')
     key = config.get('s3', 'filename')
-    write_river(bucket, key, river_obj)
+    riverjs = generate_riverjs(river_obj)
+    write_to_s3(bucket, key, riverjs)
+
     print('took %s seconds' % elapsed)
