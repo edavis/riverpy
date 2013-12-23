@@ -7,7 +7,7 @@ uploads that file to Amazon S3.
 Most RSS clients treat the news like email. There are unread counts,
 stars, and a folder structure to keep things organized.
 
-While these clients have their place, they focus more on the
+While those clients have their place, they focus more on the
 read/unread state of articles rather than the chronology of when the
 articles arrived. And for news, this chronology is vitally important.
 
