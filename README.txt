@@ -5,7 +5,8 @@ parses any included RSS/Atom feeds, generates a river.js file and
 uploads that file to Amazon S3.
 
 Most RSS clients treat the news like email. There are unread counts,
-stars, and a folder structure to keep things organized.
+stars or favorites, tagging, and a folder structure to keep things
+organized.
 
 While those clients have their place, they focus more on the
 read/unread state of articles rather than the chronology of when the
