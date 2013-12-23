@@ -98,15 +98,7 @@ if __name__ == '__main__':
                 joined = os.path.join(dirpath, filename)
                 key = Key(bucket, joined.lstrip('./'))
                 key.set_contents_from_filename(joined, policy='public-read')
-        # Create a source if requested
-        if args.source:
-            environment = jinja2.Environment(loader=jinja2.FileSystemLoader('.'))
-            index = environment.get_template('index.html')
-            rendered = index.render(river='/rivers/%s.js' % args.source)
-            key = Key(bucket, '%s/index.html' % args.source)
-            key.set_metadata('Content-Type', 'text/html')
-            key.set_contents_from_string(rendered, policy='public-read')
-        raise SystemExit
+        os.chdir('..')
 
     urls = []
     keys = ['fingerprints', 'entries', 'counter', 'urls']
@@ -130,6 +122,16 @@ if __name__ == '__main__':
             redis_client.delete(*redis_keys)
 
     for opml_url, output_prefix in urls:
+        if args.init:
+            print('uploading ui for %s' % output_prefix)
+            environment = jinja2.Environment(loader=jinja2.FileSystemLoader('ui'))
+            index = environment.get_template('index.html')
+            rendered = index.render(source=output_prefix)
+            key = Key(bucket, '%s/index.html' % output_prefix)
+            key.set_metadata('Content-Type', 'text/html')
+            key.set_contents_from_string(rendered, policy='public-read')
+            continue
+
         print('generating river for %s' % output_prefix)
 
         if not args.no_download:

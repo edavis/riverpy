@@ -10,7 +10,7 @@
     <script>
         var River = River || {};
         River.settings = {
-            url : '{{ river }}',
+            url : '/rivers/{{ source }}.js',
             callback : 'onGetRiverStream',
             social : false
         };
@@ -64,7 +64,7 @@
             <div class="article" id="${item.id}">
                 <div class="header">
                     <h3>
-                    {{if item.permaLink || item.link}}<a href="${item.permaLink || item.link}" rel="external">{{/if}}
+                    {{if item.permaLink || item.link}}<a href="${item.permaLink || item.link}" rel="external" target="_blank">{{/if}}
                     {{if item.title}}
                         ${item.title}
                     {{else}}
