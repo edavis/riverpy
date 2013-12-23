@@ -1,23 +1,25 @@
 riverpy -- Generate river.js files with Python
 
-riverpy is a River of News aggregator that takes an OPML subscription
-list, parses any listed RSS/Atom feeds, generates a river.js file and
+riverpy is a River of News aggregator that takes an OPML reading list,
+parses any included RSS/Atom feeds, generates a river.js file and
 uploads that file to Amazon S3.
 
 Most RSS clients treat the news like email. There are unread counts,
 stars, and a folder structure to keep things organized.
 
-While these clients have their place, they don't really recognize one
-of the most important parts about the news: its newness.
+While these clients have their place, they focus more on the
+read/unread state of articles rather than the chronology of when the
+articles arrived. And for news, this is vitally important.
 
 An alternative to email-style RSS clients are River of News aggregators.
 
 River of News aggregators display the newest items up top and older
-items as you scroll down. If you've ever used Twitter, you've used a
-River of News aggregator.
+items are displayed as you scroll down. If you've ever used Twitter,
+you've used a River of News aggregator.
 
 With riverpy, I've tried to build a River of News aggregator that uses
-packages commonly available on servers and is easy for people to use.
+commonly available software and is easy for people to set up and start
+using.
 
 riverpy is written in Python and uses redis as a datastore.
 
@@ -29,6 +31,7 @@ Installation:
 
 TODO:
   - Subscribe to OPML subscription lists just like RSS feeds
+  - Write an installation guide
   - Package and upload to PyPI
 
 Links:
