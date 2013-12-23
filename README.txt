@@ -1,8 +1,6 @@
-riverpy -- a River of News aggregator for the modern web
-
-riverpy is a River of News style feed aggregator that takes an OPML
-reading list, parses any linked RSS/Atom feeds, generates a river.js
-file and uploads that file and a web-based viewer to Amazon S3.
+riverpy is a River of News style aggregator that takes an OPML reading
+list, parses any linked RSS/Atom feeds, generates a river.js file and
+uploads that file and a web-based viewer to Amazon S3.
 
 Installation:
   1) install/configure redis
