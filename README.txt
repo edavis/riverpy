@@ -34,7 +34,7 @@ TODO:
   - Package and upload to PyPI
 
 Links:
-  - http://goo.gl/g11EUE -- an example of a river
+  - http://river.davising.com/sample/ -- an example of a river
   - http://goo.gl/xVZeWl -- the OPML used to generate the above river
   - http://riverjs.org/ -- the river.js specification
   - http://dev.opml.org/spec2.html -- the OPML 2.0 specification
