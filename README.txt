@@ -17,7 +17,7 @@ items as you scroll down. If you've ever used Twitter, you've used a
 River of News aggregator.
 
 With riverpy, I've tried to build a River of News aggregator that uses
-standard server environments and is easy for people to use.
+packages commonly available on servers and is easy for people to use.
 
 riverpy is written in Python and uses redis as a datastore.
 
