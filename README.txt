@@ -17,11 +17,9 @@ River of News aggregators display the newest items up top and older
 items are displayed as you scroll down. If you've ever used Twitter,
 you've used a River of News aggregator.
 
-With riverpy, I've tried to build a River of News aggregator that uses
-commonly available software and is easy for people to set up and start
-using.
-
-riverpy is written in Python and uses redis as its datastore.
+With riverpy, I've tried to build a River of News aggregator that is
+easy for people to set up and start using. It is written in Python and
+uses redis as its datastore.
 
 Installation:
   1) install/configure redis
