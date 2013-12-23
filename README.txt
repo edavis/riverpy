@@ -9,7 +9,7 @@ stars, and a folder structure to keep things organized.
 
 While these clients have their place, they focus more on the
 read/unread state of articles rather than the chronology of when the
-articles arrived. And for news, this is vitally important.
+articles arrived. And for news, this chronology is vitally important.
 
 An alternative to email-style RSS clients are River of News aggregators.
 
@@ -21,7 +21,7 @@ With riverpy, I've tried to build a River of News aggregator that uses
 commonly available software and is easy for people to set up and start
 using.
 
-riverpy is written in Python and uses redis as a datastore.
+riverpy is written in Python and uses redis as its datastore.
 
 Installation:
   1) install/configure redis
