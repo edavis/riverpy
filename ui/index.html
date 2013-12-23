@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>My Beautiful River</title>
+    <title>River of News</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="description" content="All my news in one place, updated in real time.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,7 @@
     <script>
         var River = River || {};
         River.settings = {
-            url : 'http://static.scripting.com/houston/rivers/iowaRiver3.js',
+            url : '{{ river }}',
             callback : 'onGetRiverStream',
             social : false
         };
@@ -20,7 +20,7 @@
 
 <div id="header" role="banner">
     <div class="hgroup">
-        <h1>My Beautiful River</h1>
+        <h1>River of News</h1>
         <h2>All my news in one place, updated in real time.</h2>
     </div>
 </div>
@@ -36,6 +36,7 @@
     </p>
 </div>
 
+{% raw %}
 <script id="template" type="text/x-jquery-tmpl">
     <div id="stream-header">
         <a id="stream-view" href="#">Switch to collapsed view</a></li>
@@ -109,6 +110,7 @@
 
     </div>
 </script>
+{% endraw %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.js"></script>
 <script>window.jQuery || document.write('<script src="/js/jquery-1.5.1.min.js"><\/script>')</script>
 <script src="/js/jquery.tmpl.min.js"></script>

@@ -17,6 +17,10 @@ import boto
 import arrow
 import redis
 import requests
+import jinja2
+
+from boto.s3.bucket import Bucket
+from boto.s3.key import Key
 
 from download import ParseFeed
 import utils
@@ -76,11 +80,33 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--clear', action='store_true')
     parser.add_argument('--no-download', action='store_true', help='Don\'t download feeds, only rebuild river.js file(s)')
     parser.add_argument('--clear-all', action='store_true')
+    parser.add_argument('--init', action='store_true')
     parser.add_argument('config')
     args = parser.parse_args()
 
     start = time.time()
     config = read_config(args.config)
+
+    if args.init:
+        conn = boto.connect_s3()
+        bucket = Bucket(conn, config.get('s3', 'bucket'))
+        os.chdir('ui')
+        for (dirpath, dirnames, filenames) in os.walk('.'):
+            if 'index.html' in filenames:
+                filenames.remove('index.html')
+            for filename in filenames:
+                joined = os.path.join(dirpath, filename)
+                key = Key(bucket, joined.lstrip('./'))
+                key.set_contents_from_filename(joined, policy='public-read')
+        # Create a source if requested
+        if args.source:
+            environment = jinja2.Environment(loader=jinja2.FileSystemLoader('.'))
+            index = environment.get_template('index.html')
+            rendered = index.render(river='/rivers/%s.js' % args.source)
+            key = Key(bucket, '%s/index.html' % args.source)
+            key.set_metadata('Content-Type', 'text/html')
+            key.set_contents_from_string(rendered, policy='public-read')
+        raise SystemExit
 
     urls = []
     keys = ['fingerprints', 'entries', 'counter', 'urls']

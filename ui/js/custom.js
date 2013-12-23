@@ -27,8 +27,7 @@ River.generate = (function () {
         $stream = $('#stream');
 
     function _loading() {
-        var source = River.methods.getDomain(url);
-        $stream.html('<p class="notice">Loading news from <b>' + source + '</b>, please wait&hellip;</p><div id="loader"></div>');
+        $stream.html('<p class="notice">Loading news, please wait&hellip;</p><div id="loader"></div>');
     };
 
     function _init(url, callback) {
