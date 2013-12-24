@@ -58,6 +58,8 @@ def load_rivers(location):
     head, body = load_opml(location)
     rivers = {}
     for summit in body:
+        if summit.get('isComment') == 'true':
+            continue
         river_name = summit.get('name') or summit.get('text')
         outline_type = summit.get('type')
         if outline_type is None:
