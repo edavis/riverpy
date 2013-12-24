@@ -1,10 +1,12 @@
 import os
 import json
+import path
 import time
 import Queue
 import random
 import cPickle
 import argparse
+import pkg_resources
 from lxml import etree
 from cStringIO import StringIO
 
@@ -125,6 +127,23 @@ def prepare_riverjs(started, entries):
             'version': '3',
         },
     }
+
+
+def river_init():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-b', '--bucket', required=True)
+    args = parser.parse_args()
+
+    conn = boto.connect_s3()
+    bucket = conn.lookup(args.bucket)
+    assert bucket is not None, "bucket '%s' doesn't exist" % args.bucket
+
+    assets_root = path.path(pkg_resources.resource_filename('riverpy', 'assets'))
+    for fname in assets_root.walkfiles():
+        key_name = fname.replace(assets_root + '/', '')
+        key = Key(bucket, key_name)
+        print('uploading %s' % key_name)
+        key.set_contents_from_filename(fname, policy='public-read')
 
 
 def main():

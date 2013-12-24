@@ -10,6 +10,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'river = riverpy:main',
+            'river-init = riverpy:river_init',
         ],
     },
     install_requires = [
@@ -19,6 +20,7 @@ setup(
         'feedparser==5.1.3',
         'html5lib==0.95',
         'lxml==3.2.4',
+        'path.py==5.0',
         'python-dateutil==2.2',
         'redis==2.8.0',
         'requests==2.1.0',
