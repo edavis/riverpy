@@ -129,7 +129,7 @@ def prepare_riverjs(started, entries):
     }
 
 
-if __name__ == '__main__':
+def main():
     start = time.time()
 
     parser = argparse.ArgumentParser()
