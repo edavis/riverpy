@@ -28,7 +28,7 @@ redis_client = redis.Redis()
 def s3_save(bucket_name, key_name, value, content_type=None, policy='public-read'):
     conn = boto.connect_s3()
     bucket = conn.lookup(bucket_name)
-    assert bucket is not None, "bucket '%s' must exist" % bucket_name
+    assert bucket is not None, "bucket '%s' doesn't exist" % bucket_name
     key = Key(bucket, key_name)
     if content_type is not None:
         key.set_metadata('Content-Type', content_type)
