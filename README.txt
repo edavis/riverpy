@@ -6,7 +6,7 @@ Installation:
   1) sudo aptitude install redis
   2) pip install riverpy
   3) river-init -b <S3-BUCKET>
-  3) river -b <S3-BUCKET> <OPML-URL>
+  4) river -b <S3-BUCKET> <OPML-URL>
 
 Links:
   - http://riverjs.org/ -- the river.js specification
