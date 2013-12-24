@@ -43,7 +43,7 @@ def forget_river(river):
     redis_client.delete(*redis_keys)
 
 
-def generate_riverjs(obj):
+def serialize_riverjs(obj):
     s = StringIO()
     s.write('onGetRiverStream(')
     json.dump(obj, s, sort_keys=True)
@@ -63,21 +63,67 @@ def load_opml(location):
     return opml
 
 
+def outline_commented(outline):
+    return outline.get('isComment') == 'true'
+
+
+def outline_rss(outline):
+    return all([
+        outline.get('type') == 'rss',
+        outline.get('xmlUrl'),
+        not outline_commented(outline)])
+
+
 def load_rivers(location):
     head, body = load_opml(location)
     rivers = {}
     for summit in body:
-        if summit.get('isComment') == 'true':
+        if outline_commented(summit):
             continue
         river_name = summit.get('name') or summit.get('text')
         outline_type = summit.get('type')
         if outline_type is None:
-            rivers[river_name] = [el.get('xmlUrl') for el in summit.iterdescendants() if el.get('type') == 'rss']
+            rivers[river_name] = [el.get('xmlUrl') for el in summit.iterdescendants() if outline_rss(el)]
         elif outline_type == 'include':
             url = summit.get('url')
             head, body = load_opml(url)
-            rivers[river_name] = [el.get('xmlUrl') for el in body.iterdescendants() if el.get('type') == 'rss']
+            rivers[river_name] = [el.get('xmlUrl') for el in body.iterdescendants() if outline_rss(el)]
     return rivers
+
+
+def start_downloads(thread_count, args, river, urls):
+    inbox = Queue.Queue()
+    for _ in range(thread_count):
+        p = ParseFeed(river, args, inbox)
+        p.daemon = True
+        p.start()
+    random.shuffle(urls)
+    for url in urls:
+        inbox.put(url)
+    return inbox.join()
+
+
+def extract_entries(river):
+    key = utils.river_key(river, 'entries')
+    objs = redis_client.lrange(key, 0, -1)
+    return [cPickle.loads(obj) for obj in objs]
+
+
+def prepare_riverjs(started, entries):
+    current = arrow.utcnow()
+    elapsed = str(round(time.time() - started, 3))
+    return {
+        'updatedFeeds': {
+            'updatedFeed': entries,
+        },
+        'metadata': {
+            'docs': 'http://riverjs.org/',
+            'whenGMT': utils.format_timestamp(current),
+            'whenLocal': utils.format_timestamp(current.to('local')),
+            'secs': elapsed,
+            'version': '3',
+        },
+    }
 
 
 if __name__ == '__main__':
@@ -96,48 +142,20 @@ if __name__ == '__main__':
     for river, urls in rivers.iteritems():
         if args.river and river != args.river:
             continue
-
         print("generating '%s' river" % river)
 
         feed_count = len(urls)
         thread_count = min(feed_count, args.threads)
-
         print('parsing %d feeds with %d threads' % (feed_count, thread_count))
+        start_downloads(thread_count, args, river, urls)
 
-        inbox = Queue.Queue()
-        for _ in range(thread_count):
-            p = ParseFeed(river, args, inbox)
-            p.daemon = True
-            p.start()
+        entries = extract_entries(river)
+        item_count = sum([len(entry['item']) for entry in entries])
+        print('%d feed updates with %d items' % (len(entries), item_count))
 
-        random.shuffle(urls)
-        for url in urls:
-            inbox.put(url)
-        inbox.join()
+        river_obj = prepare_riverjs(start, entries)
+        riverjs = serialize_riverjs(river_obj)
+        s3_save(args.bucket, 'rivers/%s.js' % river, riverjs, 'application/json')
 
-        river_entries = utils.river_key(river, 'entries')
-        pickled_objs = redis_client.lrange(river_entries, 0, -1)
-        entries = [cPickle.loads(obj) for obj in pickled_objs]
-        count = sum([len(obj['item']) for obj in entries])
-        print('%d feed updates with %d items' % (len(entries), count))
-
-        current = arrow.utcnow()
-        elapsed = str(round(time.time() - start, 3))
-        river_obj = {
-            'updatedFeeds': {
-                'updatedFeed': entries,
-            },
-            'metadata': {
-                'docs': 'http://riverjs.org/',
-                'whenGMT': utils.format_timestamp(current),
-                'whenLocal': utils.format_timestamp(current.to('local')),
-                'secs': elapsed,
-                'version': '3',
-            },
-        }
-
-        key = 'rivers/%s.js' % river
-        riverjs = generate_riverjs(river_obj)
-        s3_save(args.bucket, key, riverjs, 'application/json')
-
-        print('took %s seconds' % elapsed)
+        secs = river_obj['metadata']['secs']
+        print('took %s seconds' % secs)
