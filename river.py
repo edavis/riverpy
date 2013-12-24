@@ -62,6 +62,10 @@ def load_rivers(location):
         outline_type = summit.get('type')
         if outline_type is None:
             rivers[river_name] = [el.get('xmlUrl') for el in summit.iterdescendants() if el.get('type') == 'rss']
+        elif outline_type == 'include':
+            url = summit.get('url')
+            head, body = load_opml(url)
+            rivers[river_name] = [el.get('xmlUrl') for el in body.iterdescendants() if el.get('type') == 'rss']
     return rivers
 
 
