@@ -89,11 +89,15 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds [default: %(default)s]')
     parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items [default: %(default)s]')
     parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates [default: %(default)s]')
+    parser.add_argument('-r', '--river', help='Only operate on this river')
     parser.add_argument('opml', help='Path or URL of OPML reading list')
     args = parser.parse_args()
 
     rivers = load_rivers(args.opml)
     for river, urls in rivers.iteritems():
+        if args.river and river != args.river:
+            continue
+
         print("generating '%s' river" % river)
 
         feed_count = len(urls)
