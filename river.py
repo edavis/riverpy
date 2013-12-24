@@ -5,6 +5,7 @@ import json
 import time
 import Queue
 import random
+import hashlib
 import cPickle
 import argparse
 from lxml import etree
@@ -32,6 +33,15 @@ def s3_save(bucket_name, key_name, value, content_type=None, policy='public-read
     if content_type is not None:
         key.set_metadata('Content-Type', content_type)
     key.set_contents_from_string(value, policy=policy)
+
+
+def forget_river(river):
+    """
+    Delete everything we know about a given river.
+    """
+    keys = ['fingerprints', 'entries', 'counter', 'urls']
+    redis_keys = [utils.river_key(river, key) for key in keys]
+    redis_client.delete(*redis_keys)
 
 
 def generate_riverjs(obj):
