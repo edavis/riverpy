@@ -135,13 +135,23 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items [default: %(default)s]')
     parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates [default: %(default)s]')
     parser.add_argument('-r', '--river', help='Only operate on this river')
+    parser.add_argument('-c', '--clear', help='Clear previously seen rivers', action='store_true')
     parser.add_argument('opml', help='Path or URL of OPML reading list')
     args = parser.parse_args()
+
+    # Clear just the provided river if --river provided
+    if args.clear and args.river:
+        forget_river(args.river)
 
     rivers = load_rivers(args.opml)
     for river, urls in rivers.iteritems():
         if args.river and river != args.river:
             continue
+
+        # Clear everything if no --river provided
+        if args.clear and not args.river:
+            forget_river(river)
+
         print("generating '%s' river" % river)
 
         feed_count = len(urls)
