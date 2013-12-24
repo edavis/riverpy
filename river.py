@@ -5,21 +5,16 @@ import json
 import time
 import Queue
 import random
-import hashlib
 import cPickle
 import argparse
 from lxml import etree
-from datetime import datetime
 from cStringIO import StringIO
-from ConfigParser import SafeConfigParser
 
 import boto
 import arrow
 import redis
 import requests
-import jinja2
 
-from boto.s3.bucket import Bucket
 from boto.s3.key import Key
 
 from download import ParseFeed
@@ -29,19 +24,14 @@ import utils
 redis_client = redis.Redis()
 
 
-def read_config(*filenames):
-    config = SafeConfigParser()
-    config.read(filenames)
-    return config
-
-
-def write_to_s3(bucket_name, key_name, value):
+def s3_save(bucket_name, key_name, value, content_type=None, policy='public-read'):
     conn = boto.connect_s3()
-    bucket = conn.get_bucket(bucket_name) # TODO create if doesn't exist
-    key = bucket.new_key(key_name)
-    key.set_metadata('Content-Type', 'application/json')
-    key.set_contents_from_string(value)
-    key.set_acl('public-read')
+    bucket = conn.lookup(bucket_name)
+    assert bucket is not None, "bucket '%s' must exist" % bucket_name
+    key = Key(bucket, key_name)
+    if content_type is not None:
+        key.set_metadata('Content-Type', content_type)
+    key.set_contents_from_string(value, policy=policy)
 
 
 def generate_riverjs(obj):
@@ -52,115 +42,61 @@ def generate_riverjs(obj):
     return s.getvalue()
 
 
-def parse_subscription_list(location):
-    """
-    Return an iterator of xmlUrls from an OPML file.
-
-    'location' can be either local or remote.
-    """
-    if os.path.exists(location):
-        with open(location) as fp:
+def load_opml(location):
+    if os.path.exists(os.path.expanduser(location)):
+        with open(os.path.expanduser(location)) as fp:
             doc = etree.parse(fp)
         opml = doc.getroot()
     else:
         response = requests.get(location)
+        response.raise_for_status()
         opml = etree.fromstring(response.content)
+    return opml
 
-    outlines = opml.xpath('//outline[@type="rss"]')
-    for outline in outlines:
-        xmlUrl = outline.get('xmlUrl')
-        if xmlUrl:
-            yield xmlUrl
+
+def load_rivers(location):
+    head, body = load_opml(location)
+    rivers = {}
+    for summit in body:
+        river_name = summit.get('name') or summit.get('text')
+        outline_type = summit.get('type')
+        if outline_type is None:
+            rivers[river_name] = [el.get('xmlUrl') for el in summit.iterdescendants() if el.get('type') == 'rss']
+    return rivers
 
 
 if __name__ == '__main__':
+    start = time.time()
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('-u', '--url')
-    parser.add_argument('-s', '--source')
-    parser.add_argument('-c', '--clear', action='store_true')
-    parser.add_argument('--no-download', action='store_true', help='Don\'t download feeds, only rebuild river.js file(s)')
-    parser.add_argument('--clear-all', action='store_true')
-    parser.add_argument('--init', action='store_true')
-    parser.add_argument('config')
+    parser.add_argument('-b', '--bucket', required=True, help='Destination S3 bucket. Required.')
+    parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds [default: %(default)s]')
+    parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items [default: %(default)s]')
+    parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates [default: %(default)s]')
+    parser.add_argument('opml', help='Path or URL of OPML reading list')
     args = parser.parse_args()
 
-    start = time.time()
-    config = read_config(args.config)
+    rivers = load_rivers(args.opml)
+    for river, urls in rivers.iteritems():
+        print("generating '%s' river" % river)
 
-    if args.init:
-        conn = boto.connect_s3()
-        bucket = Bucket(conn, config.get('s3', 'bucket'))
-        os.chdir('ui')
-        for (dirpath, dirnames, filenames) in os.walk('.'):
-            if 'index.html' in filenames:
-                filenames.remove('index.html')
-            for filename in filenames:
-                joined = os.path.join(dirpath, filename)
-                key = Key(bucket, joined.lstrip('./'))
-                key.set_contents_from_filename(joined, policy='public-read')
-        os.chdir('..')
+        feed_count = len(urls)
+        thread_count = min(feed_count, args.threads)
 
-    urls = []
-    keys = ['fingerprints', 'entries', 'counter', 'urls']
-    sources = config.get('river', 'sources').strip()
-    for source in sources.splitlines():
-        (opml_url, output_prefix) = source.split(' -> ', 1)
-        # If we pass --source, only update that particular river
-        if args.source and output_prefix != args.source:
-            continue
-        # If we pass --clear, forget everything we know about that
-        # OPML file.
-        if args.clear and args.source == output_prefix:
-            print('clearing everything we know about %s' % output_prefix)
-            redis_keys = [utils.river_key(opml_url, key) for key in keys]
-            redis_client.delete(*redis_keys)
-        urls.append((opml_url, output_prefix))
+        print('parsing %d feeds with %d threads' % (feed_count, thread_count))
 
-    if args.clear_all:
-        for (opml, source) in urls:
-            redis_keys = [utils.river_key(opml, key) for key in keys]
-            redis_client.delete(*redis_keys)
+        inbox = Queue.Queue()
+        for _ in range(thread_count):
+            p = ParseFeed(river, args, inbox)
+            p.daemon = True
+            p.start()
 
-    for opml_url, output_prefix in urls:
-        if args.init:
-            print('uploading ui for %s' % output_prefix)
-            environment = jinja2.Environment(loader=jinja2.FileSystemLoader('ui'))
-            index = environment.get_template('index.html')
-            rendered = index.render(source=output_prefix)
-            key = Key(bucket, '%s/index.html' % output_prefix)
-            key.set_metadata('Content-Type', 'text/html')
-            key.set_contents_from_string(rendered, policy='public-read')
-            continue
+        random.shuffle(urls)
+        for url in urls:
+            inbox.put(url)
+        inbox.join()
 
-        print('generating river for %s' % output_prefix)
-
-        if not args.no_download:
-            if args.url:
-                feed_urls = [args.url]
-            else:
-                feed_urls = list(parse_subscription_list(opml_url))
-
-            # Don't create more threads than there are URLs
-            feed_count = len(feed_urls)
-            thread_count = min(feed_count, config.getint('limits', 'threads'))
-
-            print('parsing %d feeds with %d threads' % (feed_count, thread_count))
-
-            inbox = Queue.Queue()
-
-            for _ in range(thread_count):
-                p = ParseFeed(opml_url, config, inbox)
-                p.daemon = True
-                p.start()
-
-            random.shuffle(feed_urls)
-            for url in feed_urls:
-                inbox.put(url)
-            inbox.join()
-        else:
-            print('not downloading feeds')
-
-        river_entries = utils.river_key(opml_url, 'entries')
+        river_entries = utils.river_key(river, 'entries')
         pickled_objs = redis_client.lrange(river_entries, 0, -1)
         entries = [cPickle.loads(obj) for obj in pickled_objs]
         count = sum([len(obj['item']) for obj in entries])
@@ -178,17 +114,11 @@ if __name__ == '__main__':
                 'whenLocal': utils.format_timestamp(current.to('local')),
                 'secs': elapsed,
                 'version': '3',
-                'source': opml_url,
             },
         }
 
-        bucket = config.get('s3', 'bucket')
-        key = 'rivers/%s.js' % output_prefix
+        key = 'rivers/%s.js' % river
         riverjs = generate_riverjs(river_obj)
-        write_to_s3(bucket, key, riverjs)
+        s3_save(args.bucket, key, riverjs, 'application/json')
 
         print('took %s seconds' % elapsed)
-
-        # Print an empty line if we're hitting multiple feed lists
-        if not args.source:
-            print

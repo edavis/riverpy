@@ -5,8 +5,7 @@ uploads that file and a web-based viewer to Amazon S3.
 Installation:
   1) install/configure redis
   2) pip install -r requirements.txt # may need to install libxml2 header files
-  3) cp sample.cfg config.cfg # edit as necessary
-  4) ./river.py </path/to/config.cfg>
+  3) ./river.py -b <S3-BUCKET> <OPML-URL>
 
 TODO:
   - Subscribe to OPML subscription lists just like RSS feeds

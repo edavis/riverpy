@@ -49,16 +49,16 @@ def clean_text(text, limit=280, suffix=' ...'):
 
 
 class ParseFeed(threading.Thread):
-    def __init__(self, opml_url, config, inbox):
+    def __init__(self, river, args, inbox):
         threading.Thread.__init__(self)
         self.inbox = inbox
-        self.config = config
+        self.args = args
 
-        river_prefix = 'riverpy:%s' % hashlib.sha1(opml_url).hexdigest()
-        self.river_fingerprints = utils.river_key(opml_url, 'fingerprints')
-        self.river_entries = utils.river_key(opml_url, 'entries')
-        self.river_counter = utils.river_key(opml_url, 'counter')
-        self.river_urls = utils.river_key(opml_url, 'urls')
+        river_prefix = 'riverpy:%s' % hashlib.sha1(river).hexdigest()
+        self.river_fingerprints = utils.river_key(river, 'fingerprints')
+        self.river_entries = utils.river_key(river, 'entries')
+        self.river_counter = utils.river_key(river, 'counter')
+        self.river_urls = utils.river_key(river, 'urls')
 
         self.feed_cache_prefix = 'riverpy:feed_cache'
 
@@ -125,8 +125,7 @@ class ParseFeed(threading.Thread):
                 # First time we've seen this URL in this OPML file.
                 # Only keep the first INITIAL_ITEM_LIMIT items.
                 if not redis_client.sismember(self.river_urls, url):
-                    limit = self.config.getint('limits', 'initial')
-                    items = items[:limit]
+                    items = items[:self.args.initial]
                     redis_client.sadd(self.river_urls, url)
 
                 if items:
@@ -139,8 +138,7 @@ class ParseFeed(threading.Thread):
                         'websiteUrl': doc.feed.get('link', ''),
                         'whenLastUpdate': utils.format_timestamp(arrow.utcnow()),
                     }
-                    limit = self.config.getint('limits', 'entries') - 1
                     redis_client.lpush(self.river_entries, cPickle.dumps(obj))
-                    redis_client.ltrim(self.river_entries, 0, limit)
+                    redis_client.ltrim(self.river_entries, 0, self.args.entries - 1)
             finally:
                 self.inbox.task_done()
