@@ -5,7 +5,6 @@ import json
 import time
 import Queue
 import random
-import hashlib
 import cPickle
 import argparse
 from lxml import etree
