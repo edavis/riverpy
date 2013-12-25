@@ -168,6 +168,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bucket', required=True, help='Destination S3 bucket. Required.')
+    parser.add_argument('-n', '--no-download', help='Do everything but download the feeds', action='store_true')
     parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds [default: %(default)s]')
     parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items [default: %(default)s]')
     parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates [default: %(default)s]')
@@ -195,7 +196,8 @@ def main():
         thread_count = min(feed_count, args.threads)
         print('parsing %d feeds with %d threads' % (feed_count, thread_count))
 
-        start_downloads(thread_count, args, river, urls)
+        if not args.no_download:
+            start_downloads(thread_count, args, river, urls)
 
         entries = extract_entries(river)
         item_count = sum([len(entry['item']) for entry in entries])
