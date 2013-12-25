@@ -4,6 +4,7 @@ import path
 import time
 import Queue
 import random
+import jinja2
 import cPickle
 import argparse
 import pkg_resources
@@ -146,6 +147,19 @@ def river_init():
         key.set_contents_from_filename(fname, policy='public-read')
 
 
+def upload_template(bucket_name, river):
+    conn = boto.connect_s3()
+    bucket = conn.lookup(bucket_name)
+    assert bucket is not None, "bucket '%s' doesn't exist" % bucket_name
+    template = '%s/index.html' % river
+    if bucket.lookup(template) is None:
+        environment = jinja2.Environment(loader=jinja2.PackageLoader('riverpy', 'templates'))
+        index_template = environment.get_template('index.html')
+        key = Key(bucket, template)
+        key.set_metadata('Content-Type', 'text/html')
+        key.set_contents_from_string(index_template.render(river=river), policy='public-read')
+
+
 def main():
     start = time.time()
 
@@ -177,11 +191,14 @@ def main():
         feed_count = len(urls)
         thread_count = min(feed_count, args.threads)
         print('parsing %d feeds with %d threads' % (feed_count, thread_count))
+
         start_downloads(thread_count, args, river, urls)
 
         entries = extract_entries(river)
         item_count = sum([len(entry['item']) for entry in entries])
         print('%d feed updates with %d items' % (len(entries), item_count))
+
+        upload_template(args.bucket, river)
 
         river_obj = prepare_riverjs(start, entries)
         riverjs = serialize_riverjs(river_obj)
