@@ -159,15 +159,14 @@ def upload_template(bucket_name, river_info):
     river_name, river_title, river_description = river_info
     bucket = s3_bucket(bucket_name)
     template = '%s/index.html' % river_name
-    if bucket.lookup(template) is None:
-        environment = jinja2.Environment(loader=jinja2.PackageLoader('riverpy', 'templates'))
-        index_template = environment.get_template('index.html')
-        rendered = index_template.render(name=river_name,
-                                         title=river_title,
-                                         description=river_description)
-        key = Key(bucket, template)
-        key.set_metadata('Content-Type', 'text/html')
-        key.set_contents_from_string(rendered, policy='public-read')
+    environment = jinja2.Environment(loader=jinja2.PackageLoader('riverpy', 'templates'))
+    index_template = environment.get_template('index.html')
+    rendered = index_template.render(name=river_name,
+                                     title=river_title,
+                                     description=river_description)
+    key = Key(bucket, template)
+    key.set_metadata('Content-Type', 'text/html')
+    key.set_contents_from_string(rendered, policy='public-read')
 
 
 def main():
