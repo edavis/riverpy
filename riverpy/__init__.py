@@ -90,6 +90,8 @@ def load_rivers(location):
         if outline_commented(summit):
             continue
         river_name = summit.get('name') or summit.get('text')
+        river_title = summit.get('text', '')
+        river_description = summit.get('description', '')
         outline_type = summit.get('type')
         feeds = []
         if outline_type is None:
@@ -99,7 +101,8 @@ def load_rivers(location):
             head, body = load_opml(url)
             feeds = [el.get('xmlUrl') for el in body.iterdescendants() if outline_rss(el)]
         if feeds:
-            rivers[river_name] = feeds
+            key = (river_name, river_title, river_description)
+            rivers[key] = feeds
     return rivers
 
 
@@ -152,15 +155,19 @@ def river_init():
         key.set_contents_from_filename(fname, policy='public-read')
 
 
-def upload_template(bucket_name, river):
+def upload_template(bucket_name, river_info):
+    river_name, river_title, river_description = river_info
     bucket = s3_bucket(bucket_name)
-    template = '%s/index.html' % river
+    template = '%s/index.html' % river_name
     if bucket.lookup(template) is None:
         environment = jinja2.Environment(loader=jinja2.PackageLoader('riverpy', 'templates'))
         index_template = environment.get_template('index.html')
+        rendered = index_template.render(name=river_name,
+                                         title=river_title,
+                                         description=river_description)
         key = Key(bucket, template)
         key.set_metadata('Content-Type', 'text/html')
-        key.set_contents_from_string(index_template.render(river=river), policy='public-read')
+        key.set_contents_from_string(rendered, policy='public-read')
 
 
 def main():
@@ -182,32 +189,33 @@ def main():
         forget_river(args.river)
 
     rivers = load_rivers(args.opml)
-    for river, urls in rivers.iteritems():
-        if args.river and river != args.river:
+    for river_info, urls in rivers.iteritems():
+        river_name, river_title, river_description = river_info
+        if args.river and river_name != args.river:
             continue
 
         # Clear everything if no --river provided
         if args.clear and not args.river:
-            forget_river(river)
+            forget_river(river_name)
 
-        print("generating '%s' river" % river)
+        print("generating '%s' river" % river_name)
 
         feed_count = len(urls)
         thread_count = min(feed_count, args.threads)
         print('parsing %d feeds with %d threads' % (feed_count, thread_count))
 
         if not args.no_download:
-            start_downloads(thread_count, args, river, urls)
+            start_downloads(thread_count, args, river_name, urls)
 
-        entries = extract_entries(river)
+        entries = extract_entries(river_name)
         item_count = sum([len(entry['item']) for entry in entries])
         print('%d feed updates with %d items' % (len(entries), item_count))
 
-        upload_template(args.bucket, river)
+        upload_template(args.bucket, river_info)
 
         river_obj = prepare_riverjs(start, entries)
         riverjs = serialize_riverjs(river_obj)
-        s3_save(args.bucket, 'rivers/%s.js' % river, riverjs, 'application/json')
+        s3_save(args.bucket, 'rivers/%s.js' % river_name, riverjs, 'application/json')
 
         secs = river_obj['metadata']['secs']
         print('took %s seconds' % secs)
