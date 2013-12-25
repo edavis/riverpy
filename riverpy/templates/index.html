@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>{{ title|default("River of News", true) }}</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="description" content="{{ description|default('All my news in one place, updated in real time.', true) }}">
+    <meta name="description" content="{{ description }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/default.css">
     <script>
@@ -21,7 +21,7 @@
 <div id="header" role="banner">
     <div class="hgroup">
         <h1>{{ title|default("River of News", true) }}</h1>
-        <h2>{{ description|default("All my news in one place, updated in real time", true) }}</h2>
+        <h2>{{ description }}</h2>
     </div>
 </div>
 
