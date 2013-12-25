@@ -2,6 +2,7 @@ import json
 import time
 import Queue
 import random
+import hashlib
 import cPickle
 from cStringIO import StringIO
 
@@ -41,7 +42,7 @@ class River(object):
         return sum([len(entry['item']) for entry in self.entries])
 
     def key(self, key):
-        prefix = self.prefix + self.name
+        prefix = self.prefix + hashlib.sha1(self.name).hexdigest()
         return ':'.join([prefix, key])
 
     def update(self, thread_count, args):
