@@ -34,6 +34,7 @@ setup(
             'assets/css/*',
             'assets/images/*',
             'assets/js/*',
+            'templates/*.html',
         ],
     },
 )
