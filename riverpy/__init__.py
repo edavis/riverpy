@@ -211,3 +211,6 @@ def main():
 
         secs = river_obj['metadata']['secs']
         print('took %s seconds' % secs)
+
+        if not args.river:
+            print('')
