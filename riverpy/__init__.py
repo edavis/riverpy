@@ -11,13 +11,12 @@ def river_init():
     parser.add_argument('-b', '--bucket', required=True)
     args = parser.parse_args()
 
-    bucket = s3_bucket(args.bucket)
+    bucket = Bucket(args.bucket)
     assets_root = path.path(pkg_resources.resource_filename('riverpy', 'assets'))
-    for fname in assets_root.walkfiles():
-        key_name = fname.replace(assets_root + '/', '')
-        key = Key(bucket, key_name)
+    for filename in assets_root.walkfiles():
+        key_name = filename.replace(assets_root + '/', '')
         print('uploading %s' % key_name)
-        key.set_contents_from_filename(fname, policy='public-read')
+        bucket.write_file(key_name, filename)
 
 
 def main():

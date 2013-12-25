@@ -16,3 +16,7 @@ class Bucket(object):
         if content_type is not None:
             key.set_metadata('Content-Type', content_type)
         key.set_contents_from_string(string, policy='public-read')
+
+    def write_file(self, key_name, filename):
+        key = Key(self.bucket, key_name)
+        key.set_contents_from_filename(filename, policy='public-read')
