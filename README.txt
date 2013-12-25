@@ -2,8 +2,8 @@ riverpy is a River of News style aggregator that takes an OPML reading
 list, parses any linked RSS/Atom feeds, generates a river.js file and
 then hosts everything on Amazon S3.
 
-To see one in action, http://river.davising.com/nyt/ is a river of
-news of headlines from the New York Times that updates hourly.
+To see one in action, http://river.davising.com/nyt/ is a river of New
+York Times headlines that updates hourly.
 
 Installation:
   1) install/configure/start redis (default settings should work)
