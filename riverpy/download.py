@@ -49,17 +49,15 @@ def clean_text(text, limit=280, suffix=' ...'):
 
 
 class ParseFeed(threading.Thread):
-    def __init__(self, river, args, inbox):
+    def __init__(self, inbox, river, args):
         threading.Thread.__init__(self)
         self.inbox = inbox
         self.args = args
 
-        river_prefix = 'riverpy:%s' % hashlib.sha1(river).hexdigest()
-        self.river_fingerprints = utils.river_key(river, 'fingerprints')
-        self.river_entries = utils.river_key(river, 'entries')
-        self.river_counter = utils.river_key(river, 'counter')
-        self.river_urls = utils.river_key(river, 'urls')
-
+        self.river_fingerprints = river.key('fingerprints')
+        self.river_entries = river.key('entries')
+        self.river_counter = river.key('counter')
+        self.river_urls = river.key('urls')
         self.feed_cache_prefix = 'riverpy:feed_cache'
 
     def run(self):
@@ -75,12 +73,12 @@ class ParseFeed(threading.Thread):
                     feed_content = response.content
                     redis_client.set(feed_cache_key, feed_content, ex=60*15)
             except requests.exceptions.RequestException as ex:
-                sys.stderr.write('[% -8s] *** skipping %s: %s\n' % (self.getName(), url, str(ex)))
+                sys.stderr.write('[% -8s] *** skipping %s: %s\n' % (self.name, url, str(ex)))
             else:
                 try:
                     doc = feedparser.parse(feed_content)
                 except ValueError as ex:
-                    sys.stderr.write('[% -8s] *** failed parsing %s: %s\n' % (self.getName(), url, str(ex)))
+                    sys.stderr.write('[% -8s] *** failed parsing %s: %s\n' % (self.name, url, str(ex)))
                     break
                 items = []
                 for entry in doc.entries:
@@ -129,7 +127,7 @@ class ParseFeed(threading.Thread):
                     redis_client.sadd(self.river_urls, url)
 
                 if items:
-                    sys.stdout.write('[% -8s] %s (%d new)\n' % (self.getName(), url, len(items)))
+                    sys.stdout.write('[% -8s] %s (%d new)\n' % (self.name, url, len(items)))
                     obj = {
                         'feedDescription': doc.feed.get('description', ''),
                         'feedTitle': doc.feed.get('title', ''),
