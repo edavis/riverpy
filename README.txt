@@ -1,8 +1,8 @@
 riverpy is a River of News aggregator. It takes an OPML file
-containing an unlimited number of topics and associated RSS/Atom feeds
-and generates a river.js file representing the flow of information
-from those feeds. Everything is then uploaded to Amazon S3 for the
-world to see.
+containing any number of topics and associated RSS/Atom feeds and
+generates a river.js file representing the flow of information from
+those feeds. Everything is then uploaded to Amazon S3 for the world to
+see.
 
 A demo river can be found here: http://river.davising.com/nyt/
 
