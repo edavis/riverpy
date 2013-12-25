@@ -25,10 +25,18 @@ import utils
 redis_client = redis.Redis()
 
 
-def s3_save(bucket_name, key_name, value, content_type=None, policy='public-read'):
+def s3_bucket(bucket_name):
+    """
+    Return an S3 bucket, ensuring it exists first.
+    """
     conn = boto.connect_s3()
     bucket = conn.lookup(bucket_name)
     assert bucket is not None, "bucket '%s' doesn't exist" % bucket_name
+    return bucket
+
+
+def s3_save(bucket_name, key_name, value, content_type=None, policy='public-read'):
+    bucket = s3_bucket(bucket_name)
     key = Key(bucket, key_name)
     if content_type is not None:
         key.set_metadata('Content-Type', content_type)
@@ -135,10 +143,7 @@ def river_init():
     parser.add_argument('-b', '--bucket', required=True)
     args = parser.parse_args()
 
-    conn = boto.connect_s3()
-    bucket = conn.lookup(args.bucket)
-    assert bucket is not None, "bucket '%s' doesn't exist" % args.bucket
-
+    bucket = s3_bucket(args.bucket)
     assets_root = path.path(pkg_resources.resource_filename('riverpy', 'assets'))
     for fname in assets_root.walkfiles():
         key_name = fname.replace(assets_root + '/', '')
@@ -148,9 +153,7 @@ def river_init():
 
 
 def upload_template(bucket_name, river):
-    conn = boto.connect_s3()
-    bucket = conn.lookup(bucket_name)
-    assert bucket is not None, "bucket '%s' doesn't exist" % bucket_name
+    bucket = s3_bucket(bucket_name)
     template = '%s/index.html' % river
     if bucket.lookup(template) is None:
         environment = jinja2.Environment(loader=jinja2.PackageLoader('riverpy', 'templates'))
