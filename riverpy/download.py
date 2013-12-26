@@ -133,7 +133,7 @@ class ParseFeed(threading.Thread):
                         'websiteUrl': doc.feed.get('link', ''),
                         'whenLastUpdate': utils.format_timestamp(arrow.utcnow()),
                     }
-                    redis_client.lpush(river_entries, cPickle.dumps(obj))
-                    redis_client.ltrim(river_entries, 0, self.entries_limit - 1)
+                    self.redis_client.lpush(river_entries, cPickle.dumps(obj))
+                    self.redis_client.ltrim(river_entries, 0, self.entries_limit - 1)
             finally:
                 self.inbox.task_done()
