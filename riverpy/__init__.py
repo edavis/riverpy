@@ -47,7 +47,7 @@ def main():
         print('parsing %d feeds with %d threads' % (feed_count, thread_count))
 
         if not args.no_download:
-            river.update(thread_count, args)
+            river.update(thread_count, args.initial, args.entries)
 
         print('%d feed updates with %d items' % (len(river.entries), river.item_count))
 

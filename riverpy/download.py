@@ -49,10 +49,11 @@ def clean_text(text, limit=280, suffix=' ...'):
 
 
 class ParseFeed(threading.Thread):
-    def __init__(self, inbox, river, args):
+    def __init__(self, inbox, river, initial_limit, entries_limit):
         threading.Thread.__init__(self)
         self.inbox = inbox
-        self.args = args
+        self.initial_limit = initial_limit
+        self.entries_limit = entries_limit
 
         self.river_fingerprints = river.key('fingerprints')
         self.river_entries = river.key('entries')
@@ -123,7 +124,7 @@ class ParseFeed(threading.Thread):
                 # First time we've seen this URL in this OPML file.
                 # Only keep the first INITIAL_ITEM_LIMIT items.
                 if not redis_client.sismember(self.river_urls, url):
-                    items = items[:self.args.initial]
+                    items = items[:self.initial_limit]
                     redis_client.sadd(self.river_urls, url)
 
                 if items:
@@ -137,6 +138,6 @@ class ParseFeed(threading.Thread):
                         'whenLastUpdate': utils.format_timestamp(arrow.utcnow()),
                     }
                     redis_client.lpush(self.river_entries, cPickle.dumps(obj))
-                    redis_client.ltrim(self.river_entries, 0, self.args.entries - 1)
+                    redis_client.ltrim(self.river_entries, 0, self.entries_limit - 1)
             finally:
                 self.inbox.task_done()

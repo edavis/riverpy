@@ -45,10 +45,10 @@ class River(object):
         prefix = self.prefix + hashlib.sha1(self.name).hexdigest()
         return ':'.join([prefix, key])
 
-    def update(self, thread_count, args):
+    def update(self, thread_count, initial_limit, entries_limit):
         inbox = Queue.Queue()
         for t in xrange(thread_count):
-            p = ParseFeed(inbox, self, args)
+            p = ParseFeed(inbox, self, initial_limit, entries_limit)
             p.daemon = True
             p.start()
         random.shuffle(self.info['feeds'])
