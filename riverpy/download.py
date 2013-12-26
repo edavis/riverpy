@@ -49,21 +49,21 @@ def clean_text(text, limit=280, suffix=' ...'):
 
 
 class ParseFeed(threading.Thread):
-    def __init__(self, inbox, river, initial_limit, entries_limit):
+    def __init__(self, inbox, initial_limit, entries_limit):
         threading.Thread.__init__(self)
         self.inbox = inbox
         self.initial_limit = initial_limit
         self.entries_limit = entries_limit
-
-        self.river_fingerprints = river.key('fingerprints')
-        self.river_entries = river.key('entries')
-        self.river_counter = river.key('counter')
-        self.river_urls = river.key('urls')
         self.feed_cache_prefix = 'riverpy:feed_cache'
 
     def run(self):
         while True:
-            url = self.inbox.get()
+            river, url = self.inbox.get()
+            river_fingerprints = river.key('fingerprints')
+            river_entries = river.key('entries')
+            river_counter = river.key('counter')
+            river_urls = river.key('urls')
+
             try:
                 hashed_url = hashlib.sha1(url).hexdigest()
                 feed_cache_key = ':'.join([self.feed_cache_prefix, hashed_url])
@@ -84,9 +84,9 @@ class ParseFeed(threading.Thread):
                 items = []
                 for entry in doc.entries:
                     fingerprint = entry_fingerprint(entry)
-                    if redis_client.sismember(self.river_fingerprints, fingerprint):
+                    if redis_client.sismember(river_fingerprints, fingerprint):
                         continue
-                    redis_client.sadd(self.river_fingerprints, fingerprint)
+                    redis_client.sadd(river_fingerprints, fingerprint)
 
                     entry_title = entry.get('title', '')
                     entry_description = entry.get('description', '')
@@ -97,7 +97,7 @@ class ParseFeed(threading.Thread):
                         'permaLink': '',
                         'pubDate': utils.format_timestamp(entry_timestamp(entry)),
                         'title': clean_text(entry_title or entry_description),
-                        'id': str(redis_client.incr(self.river_counter)),
+                        'id': str(redis_client.incr(river_counter)),
                     }
 
                     # entry.title gets first crack at being item.title
@@ -123,9 +123,9 @@ class ParseFeed(threading.Thread):
 
                 # First time we've seen this URL in this OPML file.
                 # Only keep the first INITIAL_ITEM_LIMIT items.
-                if not redis_client.sismember(self.river_urls, url):
+                if not redis_client.sismember(river_urls, url):
                     items = items[:self.initial_limit]
-                    redis_client.sadd(self.river_urls, url)
+                    redis_client.sadd(river_urls, url)
 
                 if items:
                     sys.stdout.write('[% -8s] %s (%d new)\n' % (self.name, url, len(items)))
@@ -137,7 +137,7 @@ class ParseFeed(threading.Thread):
                         'websiteUrl': doc.feed.get('link', ''),
                         'whenLastUpdate': utils.format_timestamp(arrow.utcnow()),
                     }
-                    redis_client.lpush(self.river_entries, cPickle.dumps(obj))
-                    redis_client.ltrim(self.river_entries, 0, self.entries_limit - 1)
+                    redis_client.lpush(river_entries, cPickle.dumps(obj))
+                    redis_client.ltrim(river_entries, 0, self.entries_limit - 1)
             finally:
                 self.inbox.task_done()

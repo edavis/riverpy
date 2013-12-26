@@ -23,7 +23,6 @@ class River(object):
         self.name = info['name']
         self.redis_client = redis.Redis()
         self.environment = jinja2.Environment(loader=jinja2.PackageLoader('riverpy', 'templates'))
-        self.start = time.time()
 
     def __len__(self):
         return len(self.info['feeds'])
@@ -45,17 +44,6 @@ class River(object):
         prefix = self.prefix + hashlib.sha1(self.name).hexdigest()
         return ':'.join([prefix, key])
 
-    def update(self, thread_count, initial_limit, entries_limit):
-        inbox = Queue.Queue()
-        for t in xrange(thread_count):
-            p = ParseFeed(inbox, self, initial_limit, entries_limit)
-            p.daemon = True
-            p.start()
-        random.shuffle(self.info['feeds'])
-        for url in self.info['feeds']:
-            inbox.put(url)
-        inbox.join()
-
     def upload_template(self, bucket):
         template = self.environment.get_template('index.html')
         rendered = template.render(name = self.name,
@@ -63,9 +51,9 @@ class River(object):
                                    description = self.info['description'])
         bucket.write_string('%s/index.html' % self.name, rendered, 'text/html')
 
-    def upload_riverjs(self, bucket):
+    def upload_riverjs(self, bucket, start):
         now = arrow.utcnow()
-        elapsed = str(round(time.time() - self.start, 3))
+        elapsed = str(round(time.time() - start, 3))
         river_obj = {
             'updatedFeeds': {
                 'updatedFeed': self.entries,
