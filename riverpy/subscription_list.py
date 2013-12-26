@@ -1,6 +1,7 @@
 import requests
 from lxml import etree
 
+import utils
 from river import River
 
 
@@ -28,7 +29,10 @@ class SubscriptionList(object):
         for summit in self.body:
             if self.outline_is_comment(summit):
                 continue
-            river_name = summit.get('name') or summit.get('text')
+            river_name = summit.get('name')
+            if not river_name:
+                river_name = utils.slugify(summit.get('text', ''))
+            assert river_name, 'all summits need either a name or text attribute'
             summit_type = summit.get('type')
             if summit_type is None:
                 parent = summit
