@@ -72,6 +72,7 @@ def main():
     inbox.join()
 
     for river in rivers:
+        if args.river and river.name != args.river: continue
         river.upload_template(bucket)
         elapsed = river.upload_riverjs(bucket, start_time)
         print('%-25s: %d feed updates, %d items (took %s seconds)' % (
