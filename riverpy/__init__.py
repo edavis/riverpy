@@ -57,7 +57,7 @@ def main():
         elif args.clear and not args.river: river.clear()
 
         total_feeds += len(river)
-        print('%-25s: updating %d feeds' % (river.name, len(river)))
+        print('%s: updating %d feeds' % (river.name, len(river)))
 
         if args.no_download: continue
 
@@ -75,5 +75,5 @@ def main():
         if args.river and river.name != args.river: continue
         river.upload_template(bucket)
         elapsed = river.upload_riverjs(bucket, start_time)
-        print('%-25s: %d feed updates, %d items (took %s seconds)' % (
+        print('%s: %d feed updates, %d items (took %s seconds)' % (
             river.name, len(river.entries), river.item_count, elapsed))
