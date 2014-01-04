@@ -67,6 +67,8 @@ def main():
         for feed in feeds:
             inbox.put((river, feed))
 
+    print('%d feeds to be checked' % total_feeds)
+
     # Wait for all the feeds to finish updating
     inbox.join()
 
