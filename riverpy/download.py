@@ -14,12 +14,12 @@ import utils
 
 
 class ParseFeed(threading.Thread):
-    def __init__(self, inbox, initial_limit, entries_limit):
+    def __init__(self, inbox, feed_cache, initial_limit, entries_limit):
         threading.Thread.__init__(self)
         self.inbox = inbox
+        self.feed_cache = feed_cache
         self.initial_limit = initial_limit
         self.entries_limit = entries_limit
-        self.feed_cache_prefix = 'riverpy:feed_cache'
         self.redis_client = redis.Redis()
 
     def entry_timestamp(self, entry):
@@ -61,14 +61,12 @@ class ParseFeed(threading.Thread):
             river_urls = river.key('urls')
 
             try:
-                hashed_url = hashlib.sha1(url).hexdigest()
-                feed_cache_key = ':'.join([self.feed_cache_prefix, hashed_url])
-                feed_content = self.redis_client.get(feed_cache_key)
+                feed_content = self.feed_cache.get(url)
                 if feed_content is None:
                     response = requests.get(url, timeout=10, verify=False)
                     response.raise_for_status()
                     feed_content = response.content
-                    self.redis_client.set(feed_cache_key, feed_content, ex=60*15)
+                    self.feed_cache[url] = feed_content
             except requests.exceptions.RequestException as ex:
                 sys.stderr.write('[% -8s] *** skipping %s: %s\n' % (self.name, url, str(ex)))
             else:

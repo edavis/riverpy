@@ -38,13 +38,14 @@ def main():
 
     start_time = time.time()
     inbox = Queue.Queue()
+    feed_cache = {}
     total_feeds = 0
 
     bucket = Bucket(args.bucket)
     rivers = SubscriptionList(args.opml)
 
     for t in xrange(args.threads):
-        p = ParseFeed(inbox, args.initial, args.entries)
+        p = ParseFeed(inbox, feed_cache, args.initial, args.entries)
         p.daemon = True
         p.start()
 
@@ -65,8 +66,6 @@ def main():
         random.shuffle(feeds)
         for feed in feeds:
             inbox.put((river, feed))
-
-    print('%d feeds to be checked' % total_feeds)
 
     # Wait for all the feeds to finish updating
     inbox.join()
