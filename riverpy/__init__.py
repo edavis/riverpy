@@ -50,11 +50,11 @@ def main():
 
     for river in rivers:
         if args.river and river.name != args.river: continue
-        # Clear a river if:
-        # 1) We're on the provided --river
-        # 2) No --river was provided (i.e., clear everything)
-        if args.clear and river.name == args.river: river.clear()
-        elif args.clear and not args.river: river.clear()
+
+        if args.clear and (river.name == args.river or not args.river):
+            # If --clear was passed, 1) clear only the given --river
+            # or 2) all rivers if no --river was passed
+            river.clear()
 
         total_feeds += len(river)
         print('%s: updating %d feeds' % (river.name, len(river)))
