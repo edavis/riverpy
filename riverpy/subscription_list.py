@@ -38,8 +38,7 @@ class SubscriptionList(object):
                 parent = summit
             elif summit_type == 'include':
                 url = summit.get('url')
-                head, body = self.parse(url)
-                parent = body
+                head, parent = self.parse(url)
             feeds = [el.get('xmlUrl') for el in parent.iterdescendants() if self.outline_is_rss(el)]
             if feeds:
                 rivers.append({
