@@ -68,7 +68,6 @@ def main():
     parser.add_argument('opml', help='Path or URL of OPML reading list')
     args = parser.parse_args()
 
-    start_time = time.time()
     inbox = Queue.Queue()
     feed_cache = {}
     total_feeds = 0
@@ -103,6 +102,8 @@ def main():
 
     # Wait for all the feeds to finish updating
     inbox.join()
+
+    start_time = time.time()
 
     for river in rivers:
         if args.river and river.name != args.river: continue
