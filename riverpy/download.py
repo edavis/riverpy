@@ -52,6 +52,15 @@ class ParseFeed(threading.Thread):
         else:
             return cleaned
 
+    def log_message(self, msg):
+        key = 'riverpy:log'
+        obj = {
+            'timestamp': arrow.utcnow().to('local'),
+            'msg': msg,
+        }
+        self.redis_client.lpush(key, cPickle.dumps(obj))
+        self.redis_client.ltrim(key, 0, 250 - 1)
+
     def run(self):
         while True:
             river, url = self.inbox.get()
@@ -68,12 +77,12 @@ class ParseFeed(threading.Thread):
                     feed_content = response.content
                     self.feed_cache[url] = feed_content
             except requests.exceptions.RequestException as ex:
-                sys.stderr.write('[% -8s] *** skipping %s: %s\n' % (self.name, url, str(ex)))
+                self.log_message('skipping %s: %s' % (url, str(ex)))
             else:
                 try:
                     doc = feedparser.parse(feed_content)
                 except ValueError as ex:
-                    sys.stderr.write('[% -8s] *** failed parsing %s: %s\n' % (self.name, url, str(ex)))
+                    self.log_message('failed to parse %s: %s\n' % (url, str(ex)))
                     break
                 items = []
                 for entry in doc.entries:

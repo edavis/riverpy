@@ -24,7 +24,8 @@ class Bucket(object):
     def rivers(self):
         _rivers = set()
         whitelist = ('css', 'images', 'js', 'favicon.ico',
-                     'apple-touch-icon-precomposed.png', 'rivers')
+                     'apple-touch-icon-precomposed.png',
+                     'rivers', 'log.html')
         for obj in self.bucket.list(delimiter='/'):
             if obj.name.startswith(whitelist): continue
             _rivers.add(obj.name[:-1]) # remove trailing slash

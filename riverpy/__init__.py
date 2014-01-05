@@ -103,6 +103,9 @@ def main():
     # Wait for all the feeds to finish updating
     inbox.join()
 
+    # Update the log file
+    utils.upload_log(bucket)
+
     for river in rivers:
         if args.river and river.name != args.river: continue
         start_time = time.time()

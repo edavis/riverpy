@@ -1,0 +1,19 @@
+<html>
+  <head>
+    <title>riverpy log</title>
+  </head>
+  <body>
+    <table border="1">
+      <tr>
+	<th align="left">Timestamp</th>
+	<th align="left">Message</th>
+      </tr>
+      {% for entry in entries %}
+      <tr>
+	<td style="white-space: nowrap;">{{ entry.timestamp|format_timestamp }}</td>
+	<td>{{ entry.msg }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>
