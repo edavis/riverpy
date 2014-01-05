@@ -11,7 +11,7 @@ class SubscriptionList(object):
         self._rivers = self.load_rivers()
 
     def rivers(self):
-        return set(self.body.xpath("./outline[@name][@isComment!='true']/@name"))
+        return set(self.body.xpath("./outline[@name]/@name"))
 
     def parse(self, url):
         response = requests.get(url)
