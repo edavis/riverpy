@@ -9,6 +9,7 @@ from river import River
 from bucket import Bucket, MissingBucket
 from download import ParseFeed
 from subscription_list import SubscriptionList
+from utils import upload_log
 
 
 def river_cleanup():
@@ -104,7 +105,7 @@ def main():
     inbox.join()
 
     # Update the log file
-    utils.upload_log(bucket)
+    upload_log(bucket)
 
     for river in rivers:
         if args.river and river.name != args.river: continue
