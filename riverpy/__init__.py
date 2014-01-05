@@ -90,7 +90,7 @@ def main():
             river.clear()
 
         total_feeds += len(river)
-        print('%s: updating %d feeds' % (river.name, len(river)))
+        print('%s: checking %d feeds' % (river.name, len(river)))
 
         if args.no_download: continue
 
@@ -99,7 +99,7 @@ def main():
         for feed in feeds:
             inbox.put((river, feed))
 
-    print('%d feeds to be checked' % total_feeds)
+    print('%d total feeds to be checked' % total_feeds)
 
     # Wait for all the feeds to finish updating
     inbox.join()
