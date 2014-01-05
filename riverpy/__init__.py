@@ -103,10 +103,9 @@ def main():
     # Wait for all the feeds to finish updating
     inbox.join()
 
-    start_time = time.time()
-
     for river in rivers:
         if args.river and river.name != args.river: continue
+        start_time = time.time()
         river.upload_template(bucket)
         elapsed = river.upload_riverjs(bucket, start_time)
         print('%s: %d feed updates, %d items (took %s seconds)' % (
