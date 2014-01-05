@@ -21,6 +21,15 @@ class Bucket(object):
         time.sleep(5) # make sure the website settings take effect
         return cls(bucket_name)
 
+    def rivers(self):
+        _rivers = set()
+        whitelist = ('css', 'images', 'js', 'favicon.ico',
+                     'apple-touch-icon-precomposed.png', 'rivers')
+        for obj in self.bucket.list(delimiter='/'):
+            if obj.name.startswith(whitelist): continue
+            _rivers.add(obj.name[:-1]) # remove trailing slash
+        return _rivers
+
     def write_string(self, path, string, content_type=None):
         key = Key(self.bucket, path)
         if content_type is not None:

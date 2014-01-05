@@ -11,6 +11,7 @@ setup(
         'console_scripts': [
             'river = riverpy:main',
             'river-init = riverpy:river_init',
+            'river-cleanup = riverpy:river_cleanup',
         ],
     },
     install_requires = [

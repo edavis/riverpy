@@ -31,6 +31,14 @@ class River(object):
         redis_keys = [self.key(key) for key in self.keys]
         self.redis_client.delete(*redis_keys)
 
+    @classmethod
+    def by_name(cls, river_name):
+        return cls({'name': river_name})
+
+    @classmethod
+    def flush(cls, river_name):
+        return cls.by_name(river_name).clear()
+
     @property
     def entries(self):
         objs = self.redis_client.lrange(self.key('entries'), 0, -1)

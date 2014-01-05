@@ -8,7 +8,10 @@ from river import River
 class SubscriptionList(object):
     def __init__(self, opml):
         (self.head, self.body) = self.parse(opml)
-        self.rivers = self.load_rivers()
+        self._rivers = self.load_rivers()
+
+    def rivers(self):
+        return set(self.body.xpath("./outline[@name][@isComment!='true']/@name"))
 
     def parse(self, url):
         response = requests.get(url)
@@ -50,4 +53,4 @@ class SubscriptionList(object):
         return rivers
 
     def __iter__(self):
-        return iter([River(info) for info in self.rivers])
+        return iter([River(info) for info in self._rivers])

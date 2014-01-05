@@ -11,6 +11,34 @@ from download import ParseFeed
 from subscription_list import SubscriptionList
 
 
+def river_cleanup():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-b', '--bucket', required=True, help='Destination S3 bucket. Required.')
+    parser.add_argument('-n', '--dry-run', action='store_true')
+    parser.add_argument('opml', help='Path or URL of OPML reading list')
+    args = parser.parse_args()
+
+    bucket = Bucket(args.bucket)
+    bucket_rivers = bucket.rivers()
+    opml_rivers = SubscriptionList(args.opml).rivers()
+    stale_rivers = bucket_rivers - opml_rivers
+
+    keys = []
+    for river_name in stale_rivers:
+        keys.extend([
+            '%s/index.html' % river_name,
+            'rivers/%s.js' % river_name,
+        ])
+        if not args.dry_run:
+            River.flush(river_name)
+
+    if not args.dry_run and keys:
+        print('deleting: %r' % keys)
+        bucket.bucket.delete_keys(keys)
+    elif args.dry_run and keys:
+        print('would delete: %r' % keys)
+
+
 def river_init():
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bucket', required=True)
