@@ -1,4 +1,5 @@
 import boto
+import time
 from boto.s3.bucket import Bucket
 from boto.s3.key import Key
 
@@ -10,6 +11,15 @@ class Bucket(object):
         self.bucket = conn.lookup(bucket_name)
         if self.bucket is None:
             raise MissingBucket("bucket '%s' doesn't exist" % bucket_name)
+
+    @classmethod
+    def create(cls, bucket_name):
+        conn = boto.connect_s3()
+        bucket = conn.create_bucket(bucket_name)
+        time.sleep(5) # make sure the bucket has been created
+        bucket.configure_website('index.html')
+        time.sleep(5) # make sure the website settings take effect
+        return cls(bucket_name)
 
     def write_string(self, path, string, content_type=None):
         key = Key(self.bucket, path)

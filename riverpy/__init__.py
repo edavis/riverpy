@@ -6,7 +6,7 @@ import argparse
 import pkg_resources
 
 from river import River
-from bucket import Bucket
+from bucket import Bucket, MissingBucket
 from download import ParseFeed
 from subscription_list import SubscriptionList
 
@@ -16,7 +16,11 @@ def river_init():
     parser.add_argument('-b', '--bucket', required=True)
     args = parser.parse_args()
 
-    bucket = Bucket(args.bucket)
+    try:
+        bucket = Bucket(args.bucket)
+    except MissingBucket:
+        bucket = Bucket.create(args.bucket)
+
     assets_root = path.path(pkg_resources.resource_filename('riverpy', 'assets'))
     for filename in assets_root.walkfiles():
         key_name = filename.replace(assets_root + '/', '')
