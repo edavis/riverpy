@@ -7,7 +7,7 @@ from river import River
 
 class SubscriptionList(object):
     def __init__(self, opml_url):
-        (self.head, self.body) = self.parse(opml)
+        (self.head, self.body) = self.parse(opml_url)
         self.opml_url = opml_url
 
     def rivers(self):
