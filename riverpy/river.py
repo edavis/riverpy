@@ -18,9 +18,10 @@ class River(object):
     prefix = 'riverpy:'
     keys = ['fingerprints', 'entries', 'counter', 'urls']
 
-    def __init__(self, info):
+    def __init__(self, info, opml_url):
         self.info = info
         self.name = info['name']
+        self.opml_url = opml_url
         self.redis_client = redis.Redis()
         self.environment = jinja2.Environment(loader=jinja2.PackageLoader('riverpy', 'templates'))
 
@@ -49,7 +50,7 @@ class River(object):
         return sum([len(entry['item']) for entry in self.entries])
 
     def key(self, key):
-        prefix = self.prefix + hashlib.sha1(self.name).hexdigest()
+        prefix = self.prefix + hashlib.sha1(self.opml_url + self.name).hexdigest()
         return ':'.join([prefix, key])
 
     def upload_template(self, bucket):

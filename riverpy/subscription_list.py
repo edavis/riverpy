@@ -6,9 +6,9 @@ from river import River
 
 
 class SubscriptionList(object):
-    def __init__(self, opml):
+    def __init__(self, opml_url):
         (self.head, self.body) = self.parse(opml)
-        self._rivers = self.load_rivers()
+        self.opml_url = opml_url
 
     def rivers(self):
         return set(self.body.xpath("./outline[@name]/@name"))
@@ -53,4 +53,4 @@ class SubscriptionList(object):
         return rivers
 
     def __iter__(self):
-        return iter([River(info) for info in self._rivers])
+        return iter([River(info, self.opml_url) for info in self.load_rivers()])
