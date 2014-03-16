@@ -14,9 +14,12 @@ class SubscriptionList(object):
         return set(self.body.xpath("./outline[@name]/@name"))
 
     def parse(self, url):
-        response = requests.get(url)
-        response.raise_for_status()
-        return etree.fromstring(response.content)
+        if url.startswith(('http://', 'https://')):
+            response = requests.get(url)
+            response.raise_for_status()
+            return etree.fromstring(response.content)
+        else:
+            return etree.parse(url).getroot()
 
     def outline_is_comment(self, outline):
         return outline.get('isComment') == 'true'
