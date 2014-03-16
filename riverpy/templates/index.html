@@ -12,10 +12,12 @@
        url: 'http://river.davising.com/rivers/news.js'
      };
      function changeRiver (element) {
-       var url = $(element).find(':selected').data('url');
+       var $selected = $(element).find(':selected');
+       var url = $selected.data('url');
        River.settings.url = url;
        River.generate.loading();
        River.generate.init(url, 'onGetRiverStream');
+       document.title = $selected.text() + " | River of News";
      }
     </script>
 </head>
