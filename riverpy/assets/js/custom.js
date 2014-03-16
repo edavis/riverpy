@@ -15,19 +15,13 @@ River.defaults = {
 
 // generate and update stream
 River.generate = (function () {
-    $(function () {
-        River.generate.loading();
-        River.generate.init(url, callback);
-        River.generate.viewToggle();
-    });
-
-    var url = River.settings.url || River.defaults.url,
-        callback = River.settings.callback || River.defaults.callback,
+    var url = River.defaults.url,
+        callback = 'onGetRiverStream',
         $template = $('#template'),
         $stream = $('#stream');
 
     function _loading() {
-        $stream.html('<p class="notice">Loading news, please wait&hellip;</p><div id="loader"></div>');
+        $stream.html('<p class="notice">Loading feeds, please wait&hellip;</p><div id="loader"></div>');
     };
 
     function _init(url, callback) {

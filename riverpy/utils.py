@@ -24,3 +24,10 @@ def upload_log(bucket):
     template = environment.get_template('log.html')
     rendered = template.render(entries=entries)
     bucket.write_string('log.html', rendered, 'text/html')
+
+
+def upload_index(bucket, rivers):
+    environment = jinja2.Environment(loader=jinja2.PackageLoader('riverpy', 'templates'))
+    template = environment.get_template('index.html')
+    rendered = template.render(rivers=rivers)
+    bucket.write_string('index.html', rendered, 'text/html')
