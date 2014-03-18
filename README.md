@@ -10,13 +10,11 @@ for the world to see.
 Demo
 ----
 
-A demo river can be found here: http://river.davising.com/nyt/
+A demo river can be found here: http://river.davising.com/
 
-It is updated every hour from an [OPML file][nyt-opml] comprising
-all the [RSS feeds offered by the New York Times][nyt-rss].
+It is updated every hour from my personal [OPML file][opml].
 
-[nyt-opml]: http://files.davising.com/opml/nytFeeds.opml
-[nyt-rss]: http://www.nytimes.com/services/xml/rss/index.html
+[opml]: https://dl.dropboxusercontent.com/s/fk2riel6m5lz7nz/rss.opml
 
 Installation
 ------------
