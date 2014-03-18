@@ -5,6 +5,7 @@ jQuery.fn.fadeSlideDown = function (speed, easing, callback) {
 };
 
 var River = River || {};
+var currentInterval;
 
 // defaults
 River.defaults = {
@@ -44,9 +45,13 @@ River.generate = (function () {
                 if ( ! lastItemId ) {
                     _populate(data);
                     // check river data every 5 minutes
-                    setInterval(function () {
-                        _init(url, callback);
-                    }, 300000);
+		    if (currentInterval) {
+			clearInterval(currentInterval);
+		    } else {
+			currentInterval = setInterval(function () {
+                            _init(url, callback);
+			}, 300000);
+		    }
                 }
 
                 // otherwise...
