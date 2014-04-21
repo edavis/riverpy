@@ -71,19 +71,40 @@ class ParseFeed(threading.Thread):
             'pubDate': format_timestamp(self.entry_timestamp(entry)),
         }
 
-        # http://scripting.com/2014/04/07/howToDisplayTitlelessFeedItems.html
-
+        # If both <title> and <description> exist:
+        #   title -> <title>
+        #   body -> <description>
         if entry.get('title') and entry.get('description'):
             obj['title'] = self.clean_text(entry.get('title'))
             obj['body'] = self.clean_text(entry.get('description'))
 
-            # Some feeds duplicate the title and
-            # description. If so, drop the body here.
+            # Drop the body if it's just a duplicate of the title.
             if obj['title'] == obj['body']:
                 obj['body'] == ''
 
+        # If <description> exists but <title> doesn't:
+        #   title -> <description>
+        #   body -> ''
+        #
+        # See http://scripting.com/2014/04/07/howToDisplayTitlelessFeedItems.html
+        # for an ad-hoc spec.
         elif not entry.get('title') and entry.get('description'):
             obj['title'] = self.clean_text(entry.get('description'))
+            obj['body'] = ''
+
+        # If neither of the above work but <title> exists:
+        #   title -> <title>
+        #   body -> ''
+        #
+        # A rare occurance -- just about everybody uses both <title>
+        # and <description> and those with title-less feeds just use
+        # <description> (in keeping with the RSS spec) -- but the
+        # Nieman Journalism Lab's RSS feed [1] needs this conditional
+        # so I assume it's not the only one out there.
+        #
+        # [1] http://www.niemanlab.org/feed/
+        elif entry.get('title'):
+            obj['title'] = entry.get('title')
             obj['body'] = ''
 
         if entry.get('link'):
