@@ -1,25 +1,20 @@
 import sys
-import hashlib
-import threading
-import cPickle
-from datetime import datetime
-
 import redis
 import arrow
 import bleach
+import hashlib
 import requests
+import threading
+import cPickle
 import feedparser
-
-import utils
-
+from datetime import datetime
+from utils import format_timestamp
 
 class ParseFeed(threading.Thread):
-    def __init__(self, inbox, feed_cache, initial_limit, entries_limit):
+    def __init__(self, inbox, args):
         threading.Thread.__init__(self)
         self.inbox = inbox
-        self.feed_cache = feed_cache
-        self.initial_limit = initial_limit
-        self.entries_limit = entries_limit
+        self.cli_args = args
         self.redis_client = redis.Redis()
 
     def entry_timestamp(self, entry):
@@ -37,14 +32,6 @@ class ParseFeed(threading.Thread):
                 return reported_timestamp
         return arrow.utcnow()
 
-    def entry_fingerprint(self, entry):
-        s = ''.join([entry.get('title', ''),
-                     entry.get('link', ''),
-                     entry.get('guid', '')])
-        s = s.encode('utf-8', 'ignore')
-        return hashlib.sha1(s).hexdigest()
-
-
     def clean_text(self, text, limit=280, suffix=' ...'):
         cleaned = bleach.clean(text, tags=[], strip=True).strip()
         if len(cleaned) > limit:
@@ -52,95 +39,105 @@ class ParseFeed(threading.Thread):
         else:
             return cleaned
 
-    def log_message(self, msg):
-        key = 'riverpy:log'
+    def entry_fingerprint(self, entry):
+        s = ''.join([
+            entry.get('title', ''),
+            entry.get('link', ''),
+            entry.get('guid', ''),
+        ])
+        s = s.encode('utf-8', 'ignore')
+        return hashlib.sha1(s).hexdigest()
+
+    def new_entry(self, entry, feed_url, river_name):
+        """
+        Return True if this entry hasn't been seen before in this feed.
+        """
+        feed_key = '%s:%s' % (river_name, feed_url)
+        return (self.entry_fingerprint(entry) not in
+                set(self.redis_client.lrange(feed_key, 0, -1)))
+
+    def add_feed_entry(self, entry, feed_url, river_name, limit=1000):
+        """
+        Add the entry to the feed key, capping at `limit'.
+        """
+        feed_key = '%s:%s' % (river_name, feed_url)
+        entry_key = self.entry_fingerprint(entry)
+        self.redis_client.lpush(feed_key, entry_key)
+        self.redis_client.ltrim(feed_key, 0, limit - 1)
+
+    def populate_feed_update(self, entry):
         obj = {
-            'timestamp': arrow.utcnow().to('local'),
-            'msg': msg,
+            'id': str(self.redis_client.incr('id-generator')),
+            'pubDate': format_timestamp(self.entry_timestamp(entry)),
         }
-        self.redis_client.lpush(key, cPickle.dumps(obj))
-        self.redis_client.ltrim(key, 0, 250 - 1)
+
+        # http://scripting.com/2014/04/07/howToDisplayTitlelessFeedItems.html
+
+        if entry.get('title') and entry.get('description'):
+            obj['title'] = self.clean_text(entry.get('title'))
+            obj['body'] = self.clean_text(entry.get('description'))
+
+            # Some feeds duplicate the title and
+            # description. If so, drop the body here.
+            if obj['title'] == obj['body']:
+                obj['body'] == ''
+
+        elif not entry.get('title') and entry.get('description'):
+            obj['title'] = self.clean_text(entry.get('description'))
+            obj['body'] = ''
+
+        if entry.get('link'):
+            obj['link'] = entry.get('link')
+
+        if entry.get('comments'):
+            obj['comments'] = entry.get('comments')
+
+        return obj
 
     def run(self):
         while True:
-            river, url = self.inbox.get()
-            river_fingerprints = river.key('fingerprints')
-            river_entries = river.key('entries')
-            river_counter = river.key('counter')
-            river_urls = river.key('urls')
-
+            river_name, feed_url = self.inbox.get()
+            print('Parsing %s' % feed_url)
             try:
-                feed_content = self.feed_cache.get(url)
-                if feed_content is None:
-                    response = requests.get(url, timeout=10, verify=False)
-                    response.raise_for_status()
-                    feed_content = response.content
-                    self.feed_cache[url] = feed_content
+                response = requests.get(feed_url, timeout=15, verify=False)
+                response.raise_for_status()
             except requests.exceptions.RequestException as ex:
-                self.log_message('skipping %s: %s' % (url, str(ex)))
+                pass
             else:
                 try:
-                    doc = feedparser.parse(feed_content)
+                    feed_parsed = feedparser.parse(response.content)
                 except ValueError as ex:
-                    self.log_message('failed to parse %s: %s\n' % (url, str(ex)))
                     break
-                items = []
-                for entry in doc.entries:
-                    fingerprint = self.entry_fingerprint(entry)
-                    if self.redis_client.sismember(river_fingerprints, fingerprint):
+
+                new_feed = (self.redis_client.llen(feed_url) == 0)
+
+                feed_updates = []
+                for entry in feed_parsed.entries:
+                    if self.new_entry(entry, feed_url, river_name):
+                        self.add_feed_entry(entry, feed_url, river_name)
+                    else:
                         continue
-                    self.redis_client.sadd(river_fingerprints, fingerprint)
 
-                    entry_title = entry.get('title', '')
-                    entry_description = entry.get('description', '')
-                    entry_link = entry.get('link', '')
+                    update = self.populate_feed_update(entry)
+                    feed_updates.append(update)
 
-                    obj = {
-                        'link': entry_link,
-                        'permaLink': '',
-                        'pubDate': utils.format_timestamp(self.entry_timestamp(entry)),
-                        'title': self.clean_text(entry_title or entry_description),
-                        'id': str(self.redis_client.incr(river_counter)),
+                # Keep --initial most recent updates if this is the
+                # first time we've seen the feed
+                if new_feed:
+                    feed_updates = feed_updates[:self.cli_args.initial]
+
+                if feed_updates:
+                    river_update = {
+                        'feedDescription': feed_parsed.feed.get('description', ''),
+                        'feedTitle': feed_parsed.feed.get('title', ''),
+                        'feedUrl': feed_url,
+                        'item': feed_updates,
+                        'websiteUrl': feed_parsed.feed.get('link', ''),
+                        'whenLastUpdate': format_timestamp(arrow.utcnow()),
                     }
+                    river_key = 'rivers:%s' % river_name
+                    self.redis_client.lpush(river_key, cPickle.dumps(river_update))
+                    self.redis_client.ltrim(river_key, 0, self.cli_args.entries - 1)
 
-                    # entry.title gets first crack at being item.title
-                    # in the river.
-                    #
-                    # But if entry.title doesn't exist, we're already
-                    # using entry.description as the item.title so
-                    # don't duplicate in item.body.
-                    obj['body'] = self.clean_text(entry_description) if entry_title else ''
-
-                    # If entry.title == entry.description, remove
-                    # item.body and just leave item.title
-                    if (entry_title and entry_description) and self.clean_text(entry_title) == self.clean_text(entry_description):
-                        obj['body'] = ''
-
-                    entry_comments = entry.get('comments')
-                    if entry_comments:
-                        obj['comments'] = entry_comments
-
-                    # TODO add enclosure/thumbnail
-
-                    items.append(obj)
-
-                # First time we've seen this URL in this OPML file.
-                # Only keep the first INITIAL_ITEM_LIMIT items.
-                if not self.redis_client.sismember(river_urls, url):
-                    items = items[:self.initial_limit]
-                    self.redis_client.sadd(river_urls, url)
-
-                if items:
-                    sys.stdout.write('[% -8s] %s (%d new)\n' % (self.name, url, len(items)))
-                    obj = {
-                        'feedDescription': doc.feed.get('description', ''),
-                        'feedTitle': doc.feed.get('title', ''),
-                        'feedUrl': url,
-                        'item': items,
-                        'websiteUrl': doc.feed.get('link', ''),
-                        'whenLastUpdate': utils.format_timestamp(arrow.utcnow()),
-                    }
-                    self.redis_client.lpush(river_entries, cPickle.dumps(obj))
-                    self.redis_client.ltrim(river_entries, 0, self.entries_limit - 1)
             finally:
                 self.inbox.task_done()

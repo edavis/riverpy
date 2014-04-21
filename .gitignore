@@ -1,3 +1,6 @@
 *.pyc
 *.egg-info
 dist
+js
+*.org
+*.opml
