@@ -32,7 +32,7 @@ class ParseFeed(threading.Thread):
                 return reported_timestamp
         return arrow.utcnow()
 
-    def clean_text(self, text, limit=280, suffix=' ...'):
+    def clean_text(self, text, limit=280, suffix='&nbsp;...'):
         cleaned = bleach.clean(text, tags=[], strip=True).strip()
         if len(cleaned) > limit:
             return ''.join(cleaned[:limit]) + suffix
