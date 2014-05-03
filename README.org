@@ -26,9 +26,9 @@ If you don't have a preference, I'd recommend YAML.
 ** Options
 ** Differences from the spec
 
-Can output JSON rather than JSONP
+- Can output JSON in addition to JSONP
 
-** TODO
+** Unfinished
 - Accept plain text subscription lists
 - Add option to spit out --json or --jsonp
 - Add option to write to local file
