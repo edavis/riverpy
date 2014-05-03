@@ -20,7 +20,7 @@ def main():
     parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds [default: %(default)s]')
     parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates [default: %(default)s]')
     parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items [default: %(default)s]')
-    parser.add_argument('opml', help='Path or URL of OPML reading list')
+    parser.add_argument('feeds', help='Path or URL of OPML/YAML reading list')
     args = parser.parse_args()
 
     total_feeds = 0
@@ -33,7 +33,7 @@ def main():
         p.daemon = True
         p.start()
 
-    rivers = list(parse_subscription_list(args.opml))
+    rivers = list(parse_subscription_list(args.feeds))
     for river in rivers:
         feeds = river['feeds']
         total_feeds += len(feeds)
