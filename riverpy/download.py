@@ -48,19 +48,17 @@ class ParseFeed(threading.Thread):
         s = s.encode('utf-8', 'ignore')
         return hashlib.sha1(s).hexdigest()
 
-    def new_entry(self, entry, feed_url, river_name):
+    def new_entry(self, feed_key, entry):
         """
         Return True if this entry hasn't been seen before in this feed.
         """
-        feed_key = '%s:%s' % (river_name, feed_url)
         return (self.entry_fingerprint(entry) not in
                 set(self.redis_client.lrange(feed_key, 0, -1)))
 
-    def add_feed_entry(self, entry, feed_url, river_name, limit=1000):
+    def add_feed_entry(self, feed_key, entry, limit=1000):
         """
         Add the entry to the feed key, capping at `limit'.
         """
-        feed_key = '%s:%s' % (river_name, feed_url)
         entry_key = self.entry_fingerprint(entry)
         self.redis_client.lpush(feed_key, entry_key)
         self.redis_client.ltrim(feed_key, 0, limit - 1)
@@ -135,8 +133,21 @@ class ParseFeed(threading.Thread):
 
                 feed_updates = []
                 for entry in feed_parsed.entries:
-                    if self.new_entry(entry, feed_url, river_name):
-                        self.add_feed_entry(entry, feed_url, river_name)
+                    # We must keep track of feed updates so they're only seen
+                    # once. Here's how that happens:
+                    #
+                    # Redis stores a list at `feed_key` that contains
+                    # the 1000 (by default) most recently seen feed
+                    # update fingerprints. See self.entry_fingerprint
+                    # for how the fingerprint is calculated.
+                    #
+                    # If the fingerprint hasn't been seen before, add it
+                    # to `feed_key`.
+                    #
+                    # If it has, this feed update has already been seen
+                    # so we can skip it.
+                    if self.new_entry(feed_key, entry):
+                        self.add_feed_entry(feed_key, entry)
                     else:
                         continue
 
