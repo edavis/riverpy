@@ -85,7 +85,7 @@ def generate_manifest(bucket, rivers, bucket_name):
     manifest = []
     for river in rivers:
         manifest.append({
-            'url': '/rivers/%s.json' % river['name'],
+            'url': 'rivers/%s.json' % river['name'],
             'title': river['title'],
         })
     bucket.write_string('manifest.json', json.dumps(manifest), 'application/json')
