@@ -12,6 +12,7 @@ class Bucket(object):
 
     def write_string(self, path, string, content_type=None):
         key = Key(self.bucket, path)
+        headers = {}
         if content_type is not None:
-            key.set_metadata('Content-Type', content_type)
-        key.set_contents_from_string(string, policy='public-read')
+            headers['Content-Type'] = content_type
+        key.set_contents_from_string(string, headers=headers, policy='public-read')
