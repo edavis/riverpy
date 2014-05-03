@@ -3,10 +3,9 @@
 riverpy is a [[http://threads2.scripting.com/2013/april/anotherPitchForRiverOfNews][River of News]] aggregator for the modern web.
 
 Given an [[http://dev.opml.org/spec2.html][OPML file]] containing a [[http://opml.davising.com/rss.opml][list of RSS feeds organized by topic]],
-riverpy generates a [[http://riverjs.org/][river.js]] file for each topic.
-
-Each river.js file contains the chronological flow of information from
-the provided feeds.
+riverpy generates a [[http://riverjs.org/][river.js]] file for each topic. Each river.js file
+contains the chronological flow of information from the provided
+feeds.
 
 Here's an [[http://river.davising.com/rivers/news.js][example]] with some news feeds. When hooked up to a [[http://river.davising.com/index.html][web frontend]],
 you can see it's a new take on what an RSS reader can be.
