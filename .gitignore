@@ -3,4 +3,5 @@
 dist
 js
 *.org
+!README.org
 *.opml
