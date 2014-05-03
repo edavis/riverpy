@@ -1,11 +1,37 @@
 * riverpy
 
-riverpy is a [[http://threads2.scripting.com/2013/april/anotherPitchForRiverOfNews][River of News]] aggregator for the modern web.
+riverpy is a River of News aggregator written in Python.
 
-Given an [[http://dev.opml.org/spec2.html][OPML file]] containing a [[http://opml.davising.com/rss.opml][list of RSS feeds organized by topic]],
-riverpy generates a [[http://riverjs.org/][river.js]] file for each topic. Each river.js file
-contains the chronological flow of information from the provided
-feeds.
+It takes a subscription list full of RSS feeds and generates one or
+more river.js files.
 
-Here's an [[http://river.davising.com/rivers/news.js][example]] with some news feeds. When hooked up to a [[http://river.davising.com/index.html][web frontend]],
-you can see it's a new take on what an RSS reader can be.
+** Wha?
+
+A River of News aggregator is a RSS reader that displays feed updates
+in reverse chronological order (i.e., most recent entry first).
+
+You can see one in action [[http://river.davising.com/index.html][here]].
+
+** Installation
+
+=$ pip install riverpy # eventually=
+
+** Subscription Lists
+
+riverpy accepts subscription lists as either OPML or YAML.
+
+If you don't have a preference, I'd recommend YAML.
+
+** Running
+** Options
+** Differences from the spec
+
+Can output JSON rather than JSONP
+
+** TODO
+- Accept plain text subscription lists
+- Add option to spit out --json or --jsonp
+- Add option to write to local file
+- web: use permalinks
+- add license
+- use logging instead of print
