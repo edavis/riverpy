@@ -130,7 +130,8 @@ class ParseFeed(threading.Thread):
                 except ValueError as ex:
                     break
 
-                new_feed = (self.redis_client.llen(feed_url) == 0)
+                feed_key = '%s:%s' % (river_name, feed_url)
+                new_feed = (self.redis_client.llen(feed_key) == 0)
 
                 feed_updates = []
                 for entry in feed_parsed.entries:
