@@ -16,6 +16,7 @@ setup(
     },
     install_requires = [
         'Jinja2==2.7.1',
+        'PyYAML==3.10',
         'arrow==0.4.2',
         'bleach==1.2.2',
         'boto==2.21.0',

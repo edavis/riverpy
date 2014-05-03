@@ -12,49 +12,7 @@ from bucket import Bucket
 from download import ParseFeed
 from utils import format_timestamp, slugify
 from riverjs import write_riverjs, generate_manifest
-
-def parse_subscription_list(location):
-    """
-    Parse the source OPML that contains all the RSS feeds and their
-    associated rivers/categories.
-
-    :param location: URL or file path of OPML file
-    """
-    def _parse(loc):
-        if loc.startswith(('http://', 'https://')):
-            response = requests.get(loc)
-            response.raise_for_status()
-            return etree.fromstring(response.content)
-        else:
-            return etree.parse(loc).getroot()
-
-    def _is_rss(el):
-        return (el.get('type') == 'rss' and
-                el.get('xmlUrl') and
-                not el.get('isComment') == 'true')
-
-    head, body = _parse(location)
-
-    for summit in body:
-        if summit.get('name'):
-            river_name = summit.get('name')
-        elif summit.get('text'):
-            river_name = slugify(summit.get('text', ''))
-        else:
-            raise ValueError, 'all summits need either a name or text attribute'
-
-        if summit.get('type') == 'include':
-            _, parent = _parse(summit.get('url'))
-        else:
-            parent = summit
-
-        feeds = [el.get('xmlUrl') for el in parent.iterdescendants() if _is_rss(el)]
-        if feeds:
-            yield {
-                'name': river_name,
-                'title': summit.get('text', ''),
-                'feeds': feeds,
-            }
+from parser import parse_subscription_list
 
 def main():
     parser = argparse.ArgumentParser()
