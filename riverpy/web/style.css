@@ -1,0 +1,94 @@
+#container {
+  width: 500px;
+  margin: 20px auto 100px;
+}
+
+/* The select dropdown and 'Updated:' */
+
+#control {
+  display: block;
+  clear: both;
+  width: 500px;
+  height: 60px;
+}
+
+#control select {
+  float: left;
+}
+
+#control small {
+  float: right;
+}
+
+select {
+  margin-bottom: 30px;
+}
+
+/* Each group of feed updates */
+
+.section {
+  border-top: thin solid #bbb;
+  margin-top: 45px;
+}
+
+.section.first {
+  margin-top: 10px;
+}
+
+h2 {
+  float: left;
+  margin-top: -9px;
+  font-weight: normal;
+  font-size: 88%;
+  background: #fff;
+  padding-right: 5px;
+}
+
+.header small {
+  float: right;
+  background: #fff;
+  margin-top: -8px;
+  padding-left: 5px;
+}
+
+.header a:visited {
+  color: #1E68A6;
+}
+
+.article {
+  clear: both;
+  margin-top: 20px;
+}
+
+.article.first {
+  margin-top: 18px;
+}
+
+h3 {
+  font-size: 100%;
+  margin-bottom: -7px;
+}
+
+p {
+  margin-bottom: 3px;
+  font-size: 85%;
+  line-height: 1.42;
+}
+
+small {
+  color: #777;
+}
+
+a:link {
+  text-decoration: none;
+  color: #1E68A6;
+}
+
+a:visited {
+  text-decoration: none;
+  color: #819fc7;
+}
+
+a:hover {
+  text-decoration: underline;
+}
