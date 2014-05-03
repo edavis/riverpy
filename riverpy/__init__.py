@@ -1,116 +1,143 @@
-import time
-import path
+import json
+import redis
+import arrow
 import Queue
 import random
+import cPickle
 import argparse
-import pkg_resources
+import requests
+from lxml import etree
 
-from river import River
-from bucket import Bucket, MissingBucket
+from bucket import Bucket
 from download import ParseFeed
-from subscription_list import SubscriptionList
-from utils import upload_log, upload_index
+from utils import format_timestamp, slugify
 
+def parse_subscription_list(location):
+    """
+    Parse the source OPML that contains all the RSS feeds and their
+    associated rivers/categories.
 
-def river_cleanup():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-b', '--bucket', required=True, help='Destination S3 bucket. Required.')
-    parser.add_argument('-n', '--dry-run', action='store_true')
-    parser.add_argument('opml', help='Path or URL of OPML reading list')
-    args = parser.parse_args()
+    :param location: URL or file path of OPML file
+    """
+    def _parse(loc):
+        if loc.startswith(('http://', 'https://')):
+            response = requests.get(loc)
+            response.raise_for_status()
+            return etree.fromstring(response.content)
+        else:
+            return etree.parse(loc).getroot()
 
-    bucket = Bucket(args.bucket)
-    bucket_rivers = bucket.rivers()
-    opml_rivers = SubscriptionList(args.opml).rivers()
-    stale_rivers = bucket_rivers - opml_rivers
+    def _is_rss(el):
+        return (el.get('type') == 'rss' and
+                el.get('xmlUrl') and
+                not el.get('isComment') == 'true')
 
-    keys = []
-    for river_name in stale_rivers:
-        keys.extend([
-            '%s/index.html' % river_name,
-            'rivers/%s.js' % river_name,
-        ])
-        if not args.dry_run:
-            River.flush(river_name)
+    head, body = _parse(location)
 
-    if not args.dry_run and keys:
-        print('deleting: %r' % keys)
-        bucket.bucket.delete_keys(keys)
-    elif args.dry_run and keys:
-        print('would delete: %r' % keys)
+    for summit in body:
+        if summit.get('name'):
+            river_name = summit.get('name')
+        elif summit.get('text'):
+            river_name = slugify(summit.get('text', ''))
+        else:
+            raise ValueError, 'all summits need either a name or text attribute'
 
+        if summit.get('type') == 'include':
+            _, parent = _parse(summit.get('url'))
+        else:
+            parent = summit
 
-def river_init():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-b', '--bucket', required=True)
-    args = parser.parse_args()
+        feeds = [el.get('xmlUrl') for el in parent.iterdescendants() if _is_rss(el)]
+        if feeds:
+            yield {
+                'name': river_name,
+                'title': summit.get('text', ''),
+                'feeds': feeds,
+            }
 
-    try:
-        bucket = Bucket(args.bucket)
-    except MissingBucket:
-        bucket = Bucket.create(args.bucket)
+def prepare_riverjs(river_obj, callback='onGetRiverStream'):
+    """
+    Take a fully unpickled river object and serialize it into a JSON
+    string.
 
-    assets_root = path.path(pkg_resources.resource_filename('riverpy', 'assets'))
-    for filename in assets_root.walkfiles():
-        key_name = filename.replace(assets_root + '/', '')
-        print('uploading %s' % key_name)
-        bucket.write_file(key_name, filename)
+    If callback is provided, make it JSONP.
+    """
+    serialized = json.dumps(river_obj, sort_keys=True)
+    if callback:
+        return '%s(%s)' % (callback, serialized)
+    else:
+        return serialized
 
+def write_riverjs(bucket, river_name, river_obj):
+    """
+    Write the riverjs JSON to Amazon S3.
+    """
+    key = 'rivers/%s.js' % river_name
+    riverjs = prepare_riverjs(river_obj)
+    bucket.write_string(key, riverjs, 'application/json')
+
+    # Also write raw JSON, in addition to JSONP
+    key = 'rivers/%s.json' % river_name
+    riverjs = prepare_riverjs(river_obj, callback=None)
+    bucket.write_string(key, riverjs, 'application/json')
+
+def generate_manifest(bucket, rivers, bucket_name):
+    manifest = []
+    for river in rivers:
+        manifest.append({
+            'url': '/rivers/%s.json' % river['name'],
+            'title': river['title'],
+        })
+    bucket.write_string('manifest.json', json.dumps(manifest), 'application/json')
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bucket', required=True, help='Destination S3 bucket. Required.')
-    parser.add_argument('-n', '--no-download', help='Do everything but download the feeds', action='store_true')
     parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds [default: %(default)s]')
-    parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items [default: %(default)s]')
     parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates [default: %(default)s]')
-    parser.add_argument('-r', '--river', help='Only operate on this river')
-    parser.add_argument('-c', '--clear', help='Clear previously seen rivers', action='store_true')
+    parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items [default: %(default)s]')
     parser.add_argument('opml', help='Path or URL of OPML reading list')
     args = parser.parse_args()
 
-    inbox = Queue.Queue()
-    feed_cache = {}
     total_feeds = 0
+    redis_client = redis.Redis()
+    s3_bucket = Bucket(args.bucket)
 
-    bucket = Bucket(args.bucket)
-    rivers = SubscriptionList(args.opml)
-
+    inbox = Queue.Queue()
     for t in xrange(args.threads):
-        p = ParseFeed(inbox, feed_cache, args.initial, args.entries)
+        p = ParseFeed(inbox, args)
         p.daemon = True
         p.start()
 
+    rivers = list(parse_subscription_list(args.opml))
     for river in rivers:
-        if args.river and river.name != args.river: continue
-
-        if args.clear and (river.name == args.river or not args.river):
-            # If --clear was passed, 1) clear only the given --river
-            # or 2) all rivers if no --river was passed
-            river.clear()
-
-        total_feeds += len(river)
-        print('%s: checking %d feeds' % (river.name, len(river)))
-
-        if args.no_download: continue
-
-        feeds = river.info['feeds']
+        feeds = river['feeds']
+        total_feeds += len(feeds)
+        print('%s: checking %d feeds' % (river['name'], len(feeds)))
         random.shuffle(feeds)
         for feed in feeds:
-            inbox.put((river, feed))
+            inbox.put((river['name'], feed))
 
     print('%d total feeds to be checked' % total_feeds)
-
-    # Wait for all the feeds to finish updating
     inbox.join()
 
-    # Update the log and index files
-    upload_log(bucket)
-    upload_index(bucket, rivers)
-
     for river in rivers:
-        if args.river and river.name != args.river: continue
-        start_time = time.time()
-        elapsed = river.upload_riverjs(bucket, start_time)
-        print('%s: %d feed updates, %d items (took %s seconds)' % (
-            river.name, len(river.entries), river.item_count, elapsed))
+        river_key = 'rivers:%s' % river['name']
+        river_updates = [cPickle.loads(update) for update in redis_client.lrange(river_key, 0, -1)]
+        river_obj = {
+            'updatedFeeds': {
+                'updatedFeed': river_updates,
+            },
+            'metadata': {
+                'docs': 'http://riverjs.org/',
+                'whenGMT': format_timestamp(arrow.utcnow()),
+                'whenLocal': format_timestamp(arrow.utcnow().to('local')),
+                'version': '3',
+                'secs': '',
+            },
+        }
+        print('writing %s.js' % river['name'])
+        write_riverjs(s3_bucket, river['name'], river_obj)
+
+    print('generating manifest.json')
+    generate_manifest(s3_bucket, rivers, args.bucket)
