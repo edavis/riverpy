@@ -1,12 +1,9 @@
-import json
 import redis
 import arrow
 import Queue
 import random
 import cPickle
 import argparse
-import requests
-from lxml import etree
 
 from bucket import Bucket
 from download import ParseFeed
