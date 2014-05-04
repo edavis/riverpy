@@ -16,21 +16,31 @@ If you're not on a Debian-based distro, replace "aptitude install"
 with whatever your distro uses. Similarly, libyaml might be under a
 different package name.
 
+** Using Amazon S3
+
+riverpy can write its files to local disk or to [[http://en.wikipedia.org/wiki/Amazon_S3][Amazon S3]].
+
+You'll need an Amazon AWS account to use S3. Creating an account is
+beyond the scope of this guide.
+
+Once an account has been created, you'll need to [[http://boto.readthedocs.org/en/latest/getting_started.html#configuring-boto-credentials][configure your credentials]]
+so riverpy can use them.
+
+TODO: Anything needed about permissions?
+
 ** Quick Start
 
 It's recommended to install riverpy into a [[http://www.virtualenv.org/en/latest/virtualenv.html][virtualenv]]. Once virtualenv
 is installed, here's how you run riverpy:
 
 #+BEGIN_SRC
-
 $ virtualenv ~/riverpy-env
 $ . ~/riverpy-env/bin/activate
 $ pip install git+https://github.com/edavis/riverpy#egg=riverpy
 $ river -o ~/riverpy/ http://git.io/demo-list.txt
-
 #+END_SRC
 
-** Subscription lists
+** Subscription Lists
 
 At the core of riverpy are "subscription lists."
 
