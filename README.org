@@ -62,7 +62,6 @@ deep.)
 - add option to spit out --json or --jsonp
 - add option to write to local directory
 - web: use permalinks
-- use logging instead of print
 
 ** License
 
