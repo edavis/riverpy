@@ -69,8 +69,6 @@ def main():
                 'secs': '',
             },
         }
-        logger.debug('writing %s.js' % river['name'])
         write_riverjs(s3_bucket, river['name'], river_obj)
 
-    logger.debug('writing manifest.json')
     generate_manifest(s3_bucket, rivers, args.bucket)
