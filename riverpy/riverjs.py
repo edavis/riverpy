@@ -1,5 +1,6 @@
 import json
 import logging
+import operator
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,7 @@ def generate_manifest(bucket, rivers, bucket_name):
             'url': 'rivers/%s.json' % river['name'],
             'title': river['title'],
         })
+    manifest = sorted(manifest, key=operator.itemgetter('title'))
     manifest_obj = json.dumps(manifest)
     logger.info('Writing manifest.json (%d bytes)' % len(manifest_obj))
     bucket.write_string('manifest.json', manifest_obj, 'application/json')
