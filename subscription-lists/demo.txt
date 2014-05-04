@@ -1,0 +1,16 @@
+News:
+  - http://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
+  - http://news.yahoo.com/rss/
+  - http://feeds.reuters.com/reuters/topNews
+  - http://feeds.feedburner.com/TheAtlantic
+  - http://feeds.slate.com/slate
+
+Tech News:
+  - http://pando.com/feed
+  - http://daringfireball.net/index.xml
+  - http://www.theverge.com/rss/frontpage
+  - http://www.washingtonpost.com/blogs/the-switch/feed/
+  - http://feeds.arstechnica.com/arstechnica/index/
+  - http://qz.com/feed/
+  - http://www.npr.org/rss/rss.php?id=1019
+  - http://rss.slashdot.org/Slashdot/slashdot
