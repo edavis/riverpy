@@ -119,7 +119,7 @@ class ParseFeed(threading.Thread):
     def run(self):
         while True:
             river_name, feed_url = self.inbox.get()
-            logger.info('Parsing %s' % feed_url)
+            logger.info('Checking %s' % feed_url)
             try:
                 response = requests.get(feed_url, timeout=15, verify=False)
                 response.raise_for_status()

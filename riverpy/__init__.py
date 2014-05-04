@@ -40,12 +40,12 @@ def main():
     for river in rivers:
         feeds = list(set(river['feeds']))
         total_feeds += len(feeds)
-        logger.info("%s: %d feeds to be checked" % (river['name'], len(feeds)))
+        logger.info("Found category '%s' (%d feeds)" % (river['title'], len(feeds)))
         random.shuffle(feeds)
         for feed in feeds:
             inbox.put((river['name'], feed))
 
-    logger.info('%d total feeds to be checked' % total_feeds)
+    logger.info('In total, found %d categories with %d feeds' % (len(rivers), total_feeds))
 
     for t in xrange(args.threads):
         p = ParseFeed(inbox, args)
@@ -54,7 +54,7 @@ def main():
 
     inbox.join()
 
-    logger.info('Finished checking feeds')
+    logger.info('Done checking feeds')
 
     for river in rivers:
         river_key = 'rivers:%s' % river['name']
