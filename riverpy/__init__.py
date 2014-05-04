@@ -38,7 +38,7 @@ def main():
 
     rivers = list(parse_subscription_list(args.feeds))
     for river in rivers:
-        feeds = river['feeds']
+        feeds = list(set(river['feeds']))
         total_feeds += len(feeds)
         logger.info("%s: %d feeds to be checked" % (river['name'], len(feeds)))
         random.shuffle(feeds)
