@@ -54,6 +54,8 @@ def main():
 
     inbox.join()
 
+    logger.info('Finished checking feeds')
+
     for river in rivers:
         river_key = 'rivers:%s' % river['name']
         river_updates = [cPickle.loads(update) for update in redis_client.lrange(river_key, 0, -1)]
