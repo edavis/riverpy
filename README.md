@@ -86,6 +86,10 @@ There's no limit to the number of feeds a category can contain.
 
 TODO: explain available command-line arguments.
 
+## Refreshing feeds automatically
+
+TODO: explain crontab
+
 ## Amazon S3
 
 riverpy can write its files to local disk or to Amazon S3. If you

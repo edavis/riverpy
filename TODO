@@ -1,17 +1,23 @@
-- add option to spit out --json or --jsonp
-- add option to write to local directory
-- web: use permalinks
-- use spinner icon when changing feeds
-- have nav dropdown float at top
-- make web frontend mobile friendly/responsive
-- add a latest (just those from last full update) and firehose
-  (everything from all rivers)
-- add changelog
-- log WARNING and above to a file
-- add metadata to categories and/or feeds
-  - categories: position?
-  - feeds: weight? name?
-- flesh out docs for terminology
-- write small flask frontend for PuSH
-- allow includes in subscription list
-- only update a given category by URL#name
+# -*- mode: org -*-
+
+- Backend:
+  - Add option to write to local directory
+  - Add option to generate JSON and/or JSONP
+  - Add "special" rivers:
+    - "Latest" would be everything from the last run
+    - "Firehose" would be everything from all rivers
+  - Write log output to file
+  - Only update a given category with URL#name
+- Frontend:
+  - Use permalinks to link directly to a river
+  - Display spinner/progress bar when changing rivers
+  - Have navigation dropdown float at top
+  - Make it look better on mobile
+- Subscription Lists:
+  - Add metadata to categories/feeds
+    - position for categories
+    - different weights for feeds
+    - custom names for feeds
+  - Add ability to "include" other subscription lists
+- Docs:
+  - Add a ChangeLog
