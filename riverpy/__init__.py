@@ -1,12 +1,10 @@
-import json
 import redis
 import arrow
 import Queue
 import random
 import cPickle
+import logging
 import argparse
-import requests
-from lxml import etree
 
 from bucket import Bucket
 from download import ParseFeed
@@ -14,13 +12,22 @@ from utils import format_timestamp, slugify
 from riverjs import write_riverjs, generate_manifest
 from parser import parse_subscription_list
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(levelname)-5s] %(asctime)s - %(name)s - %(message)s',
+)
+
+logging.getLogger('requests').setLevel(logging.WARNING)
+
+logger = logging.getLogger(__name__)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bucket', required=True, help='Destination S3 bucket. Required.')
     parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds [default: %(default)s]')
     parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates [default: %(default)s]')
     parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items [default: %(default)s]')
-    parser.add_argument('feeds', help='Path or URL of OPML/YAML reading list')
+    parser.add_argument('feeds', help='URL of OPML or plain text subscription list. Also accepts local filenames.')
     args = parser.parse_args()
 
     total_feeds = 0
@@ -28,21 +35,23 @@ def main():
     s3_bucket = Bucket(args.bucket)
 
     inbox = Queue.Queue()
-    for t in xrange(args.threads):
-        p = ParseFeed(inbox, args)
-        p.daemon = True
-        p.start()
 
     rivers = list(parse_subscription_list(args.feeds))
     for river in rivers:
         feeds = river['feeds']
         total_feeds += len(feeds)
-        print('%s: checking %d feeds' % (river['name'], len(feeds)))
+        logger.info("%s: %d feeds to be checked" % (river['name'], len(feeds)))
         random.shuffle(feeds)
         for feed in feeds:
             inbox.put((river['name'], feed))
 
-    print('%d total feeds to be checked' % total_feeds)
+    logger.info('%d total feeds to be checked' % total_feeds)
+
+    for t in xrange(args.threads):
+        p = ParseFeed(inbox, args)
+        p.daemon = True
+        p.start()
+
     inbox.join()
 
     for river in rivers:
@@ -60,8 +69,8 @@ def main():
                 'secs': '',
             },
         }
-        print('writing %s.js' % river['name'])
+        logger.debug('writing %s.js' % river['name'])
         write_riverjs(s3_bucket, river['name'], river_obj)
 
-    print('generating manifest.json')
+    logger.debug('writing manifest.json')
     generate_manifest(s3_bucket, rivers, args.bucket)
