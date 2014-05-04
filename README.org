@@ -2,14 +2,39 @@
 
 riverpy is a River of News aggregator written in Python.
 
-When it all comes together, it looks like this:
-http://river.davising.com/index.html
+Once up and running, it looks like [[http://riverpy-demo.s3.amazonaws.com/index.html][this]].
+
+** Requirements
+
+riverpy only requires two outside dependencies: redis and libyaml.
+
+To install them on Mac OSX: =$ brew install redis libyaml=
+
+To install them on Debian/Ubuntu: =$ sudo aptitude install redis libyaml-dev=
+
+If you're not on a Debian-based distro, replace "aptitude install"
+with whatever your distro uses. Similarly, libyaml might be under a
+different package name.
+
+** Quick Start
+
+It's recommended to install riverpy into a [[http://www.virtualenv.org/en/latest/virtualenv.html][virtualenv]]. Once virtualenv
+is installed, here's how you run riverpy:
+
+#+BEGIN_SRC
+
+$ virtualenv ~/riverpy-env
+$ . ~/riverpy-env/bin/activate
+$ pip install git+https://github.com/edavis/riverpy#egg=riverpy
+$ river -o ~/riverpy/ https://raw.githubusercontent.com/edavis/riverpy/master/subscription-lists/demo.txt
+
+#+END_SRC
 
 ** Installation
 
 =$ pip install git+https://github.com/edavis/riverpy#egg=riverpy=
 
-** Running
+** Checking feeds
 
 =$ river -b S3-BUCKET SUBSCRIPTION-LIST-URL=
 
@@ -17,7 +42,7 @@ For example, here's how the above demo is generated:
 
 =$ river -b river.davising.com -e 150 https://dl.dropboxusercontent.com/u/19853263/feeds.txt=
 
-** Subscription Lists
+** Subscription lists
 
 At the core of riverpy are "subscription lists."
 
@@ -62,6 +87,29 @@ deep.)
 - add option to spit out --json or --jsonp
 - add option to write to local directory
 - web: use permalinks
+
+- set up proper demo (with not my feeds)
+  - One to write to a local folder
+  - One to write to S3
+    - mention AWS account is needed
+    - Uses boto, so config boto.cfg (link to boto docs for this)
+- use spinner icon when changing feeds
+- have nav dropdown float at top
+- clean up setup.py
+- add subscription list to metadata
+- bump metadata.version
+- make web frontend mobile friendly/responsive
+- add a latest (just those from last full update) and firehose
+  (everything from all rivers)
+- add changelog
+- log WARNING and above to a file
+- add metadata to categories and/or feeds
+  - categories: position?
+  - feeds: weight? name?
+- flesh out docs for terminology
+- write small flask frontend for PuSH
+- allow includes in subscription list
+- only update a given category by URL#name
 
 ** License
 
