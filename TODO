@@ -1,7 +1,6 @@
 # -*- mode: org -*-
 
 - Backend:
-  - Add option to write to local directory
   - Add option to generate JSON and/or JSONP
   - Add "special" rivers:
     - "Latest" would be everything from the last run

@@ -1,6 +1,8 @@
 import json
 import logging
 import operator
+from path import path
+from bucket import Bucket
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,7 @@ def prepare_riverjs(river_obj, callback='onGetRiverStream'):
     else:
         return serialized
 
-def write_riverjs(bucket, river_name, river_obj):
+def write_riverjs(dest, river_name, river_obj):
     """
     Write the riverjs JSON to Amazon S3.
     """
@@ -28,9 +30,15 @@ def write_riverjs(bucket, river_name, river_obj):
     for (key, callback) in river_types:
         riverjs = prepare_riverjs(river_obj, callback=callback)
         logger.info('Writing %s (%d bytes)' % (key, len(riverjs)))
-        bucket.write_string(key, riverjs, 'application/json')
+        if isinstance(dest, Bucket):
+            dest.write_string(key, riverjs, 'application/json')
+        elif isinstance(dest, path):
+            fname = dest.joinpath(key)
+            fname.parent.makedirs_p()
+            with fname.open('w') as fp:
+                fp.write(riverjs)
 
-def generate_manifest(bucket, rivers, bucket_name):
+def generate_manifest(dest, rivers):
     manifest = []
     for river in rivers:
         manifest.append({
@@ -40,4 +48,9 @@ def generate_manifest(bucket, rivers, bucket_name):
     manifest = sorted(manifest, key=operator.itemgetter('title'))
     manifest_obj = json.dumps(manifest)
     logger.info('Writing manifest.json (%d bytes)' % len(manifest_obj))
-    bucket.write_string('manifest.json', manifest_obj, 'application/json')
+    if isinstance(dest, Bucket):
+        dest.write_string('manifest.json', manifest_obj, 'application/json')
+    elif isinstance(dest, path):
+        fname = dest.joinpath('manifest.json')
+        with fname.open('w') as fp:
+            fp.write(manifest_obj)

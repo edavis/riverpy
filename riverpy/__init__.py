@@ -5,6 +5,7 @@ import random
 import cPickle
 import logging
 import argparse
+from path import path
 
 from bucket import Bucket
 from download import ParseFeed
@@ -23,27 +24,37 @@ logger = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-b', '--bucket', required=True, help='Destination S3 bucket. Required.')
-    parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds [default: %(default)s]')
-    parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates [default: %(default)s]')
-    parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items [default: %(default)s]')
+    parser.add_argument('-b', '--bucket', help='Destination S3 bucket.')
+    parser.add_argument('-o', '--output', help='Destination directory.')
+
+    parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds. [default: %(default)s]')
+    parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates. [default: %(default)s]')
+    parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items. [default: %(default)s]')
 
     parser.add_argument('--redis-host', default='127.0.0.1', help='Redis host to use. [default: %(default)s]')
     parser.add_argument('--redis-port', default=6379, type=int, help='Redis port to use. [default: %(default)s]')
     parser.add_argument('--redis-db', default=0, type=int, help='Redis DB to use. [default: %(default)s]')
 
-    parser.add_argument('feeds', help='URL of OPML or plain text subscription list. Also accepts local filenames.')
+    parser.add_argument('feeds', help='Subscription list to use. Accepts URLs and filenames.')
     args = parser.parse_args()
 
-    total_feeds = 0
     redis_client = redis.Redis(
         host=args.redis_host,
         port=args.redis_port,
         db=args.redis_db,
     )
-    s3_bucket = Bucket(args.bucket)
-
+    total_feeds = 0
     inbox = Queue.Queue()
+
+    s3_bucket = None
+    output_directory = None
+
+    if args.bucket:
+        s3_bucket = Bucket(args.bucket)
+
+    if args.output:
+        output_directory = path(args.output)
+        output_directory.makedirs_p()
 
     rivers = list(parse_subscription_list(args.feeds))
     for river in rivers:
@@ -81,6 +92,14 @@ def main():
                 'secs': '',
             },
         }
-        write_riverjs(s3_bucket, river['name'], river_obj)
+        if s3_bucket:
+            write_riverjs(s3_bucket, river['name'], river_obj)
 
-    generate_manifest(s3_bucket, rivers, args.bucket)
+        if output_directory:
+            write_riverjs(output_directory, river['name'], river_obj)
+
+    if s3_bucket:
+        generate_manifest(s3_bucket, rivers)
+
+    if output_directory:
+        generate_manifest(output_directory, rivers)
