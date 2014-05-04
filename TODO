@@ -1,0 +1,17 @@
+- add option to spit out --json or --jsonp
+- add option to write to local directory
+- web: use permalinks
+- use spinner icon when changing feeds
+- have nav dropdown float at top
+- make web frontend mobile friendly/responsive
+- add a latest (just those from last full update) and firehose
+  (everything from all rivers)
+- add changelog
+- log WARNING and above to a file
+- add metadata to categories and/or feeds
+  - categories: position?
+  - feeds: weight? name?
+- flesh out docs for terminology
+- write small flask frontend for PuSH
+- allow includes in subscription list
+- only update a given category by URL#name
