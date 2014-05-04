@@ -11,10 +11,9 @@ It's written in Python.
 
 A River of News aggregator is a certain type of RSS reader.
 
-As Dave Winer, a pioneer of River of News aggregators, [puts it][]: "It's
-an application that reads feeds you've subscribed to and presents only
-the new items, newest first. As you scroll down you go back in time,
-to older items."
+As Dave Winer [puts it][]: "It's an application that reads feeds
+you've subscribed to and presents only the new items, newest first. As
+you scroll down you go back in time, to older items."
 
 Click [here][riverpy-demo] to see a demo of riverpy in action.
 
@@ -55,6 +54,10 @@ next section for the subscription list format.
 
 [demo-list.txt]: <http://git.io/demo-list.txt>
 
+## Options
+
+TODO: explain available command-line arguments.
+
 ## Subscription lists
 
 Subscription lists are plain text files that contain URLs of RSS feeds
@@ -82,9 +85,9 @@ must be at least one defined category.
 
 There's no limit to the number of feeds a category can contain.
 
-## Options
+## Web frontend
 
-TODO: explain available command-line arguments.
+TODO: explain how to view the river.js files
 
 ## Refreshing feeds automatically
 
