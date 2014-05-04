@@ -2,13 +2,16 @@ import sys
 import redis
 import arrow
 import bleach
+import logging
+import cPickle
 import hashlib
 import requests
 import threading
-import cPickle
 import feedparser
 from datetime import datetime
 from utils import format_timestamp
+
+logger = logging.getLogger(__name__)
 
 class ParseFeed(threading.Thread):
     def __init__(self, inbox, args):
@@ -116,16 +119,17 @@ class ParseFeed(threading.Thread):
     def run(self):
         while True:
             river_name, feed_url = self.inbox.get()
-            print('Parsing %s' % feed_url)
+            logger.info('Parsing %s' % feed_url)
             try:
                 response = requests.get(feed_url, timeout=15, verify=False)
                 response.raise_for_status()
             except requests.exceptions.RequestException as ex:
-                pass
+                logger.exception('Failed to load %s' % feed_url)
             else:
                 try:
                     feed_parsed = feedparser.parse(response.content)
                 except ValueError as ex:
+                    logger.exception('Failed to parse %s' % feed_url)
                     break
 
                 feed_key = '%s:%s' % (river_name, feed_url)
