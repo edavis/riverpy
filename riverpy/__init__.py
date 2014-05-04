@@ -74,6 +74,7 @@ def main():
             },
             'metadata': {
                 'docs': 'http://riverjs.org/',
+                'subscriptionList': '%s#%s' % (args.feeds, river['title']),
                 'whenGMT': format_timestamp(arrow.utcnow()),
                 'whenLocal': format_timestamp(arrow.utcnow().to('local')),
                 'version': '3',
