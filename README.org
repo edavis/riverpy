@@ -42,7 +42,7 @@ $ river -o ~/riverpy/ http://git.io/demo-list.txt
 
 ** Subscription Lists
 
-At the core of riverpy are "subscription lists."
+riverpy reads "subscription lists" to know which feeds to check.
 
 Subscription lists are files that contain URLs of RSS feeds. Each feed
 belongs to a category. Adding feeds to this file is how you
