@@ -29,7 +29,7 @@ def main():
     parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items [default: %(default)s]')
 
     parser.add_argument('--redis-host', default='127.0.0.1', help='Redis host to use. [default: %(default)s]')
-    parser.add_argument('--redis-port', default=6379, help='Redis port to use. [default: %(default)s]')
+    parser.add_argument('--redis-port', default=6379, type=int, help='Redis port to use. [default: %(default)s]')
     parser.add_argument('--redis-db', default=0, type=int, help='Redis DB to use. [default: %(default)s]')
 
     parser.add_argument('feeds', help='URL of OPML or plain text subscription list. Also accepts local filenames.')
