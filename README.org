@@ -2,8 +2,6 @@
 
 riverpy is a River of News aggregator written in Python.
 
-** Demo
-
 When it all comes together, it looks like this:
 http://river.davising.com/index.html
 
