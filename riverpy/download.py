@@ -18,7 +18,11 @@ class ParseFeed(threading.Thread):
         threading.Thread.__init__(self)
         self.inbox = inbox
         self.cli_args = args
-        self.redis_client = redis.Redis()
+        self.redis_client = redis.Redis(
+            host=args.redis_host,
+            port=args.redis_port,
+            db=args.redis_db,
+        )
 
     def entry_timestamp(self, entry):
         """

@@ -27,11 +27,20 @@ def main():
     parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds [default: %(default)s]')
     parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates [default: %(default)s]')
     parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items [default: %(default)s]')
+
+    parser.add_argument('--redis-host', default='127.0.0.1', help='Redis host to use. [default: %(default)s]')
+    parser.add_argument('--redis-port', default=6379, help='Redis port to use. [default: %(default)s]')
+    parser.add_argument('--redis-db', default=0, type=int, help='Redis DB to use. [default: %(default)s]')
+
     parser.add_argument('feeds', help='URL of OPML or plain text subscription list. Also accepts local filenames.')
     args = parser.parse_args()
 
     total_feeds = 0
-    redis_client = redis.Redis()
+    redis_client = redis.Redis(
+        host=args.redis_host,
+        port=args.redis_port,
+        db=args.redis_db,
+    )
     s3_bucket = Bucket(args.bucket)
 
     inbox = Queue.Queue()
@@ -45,7 +54,7 @@ def main():
         for feed in feeds:
             inbox.put((river['name'], feed))
 
-    logger.info('In total, found %d categories with %d feeds' % (len(rivers), total_feeds))
+    logger.info('In total, found %d categories (%d feeds)' % (len(rivers), total_feeds))
 
     for t in xrange(args.threads):
         p = ParseFeed(inbox, args)
