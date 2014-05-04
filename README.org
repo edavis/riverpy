@@ -26,22 +26,9 @@ is installed, here's how you run riverpy:
 $ virtualenv ~/riverpy-env
 $ . ~/riverpy-env/bin/activate
 $ pip install git+https://github.com/edavis/riverpy#egg=riverpy
-$ river -o ~/riverpy/ \
-    https://raw.githubusercontent.com/edavis/riverpy/master/subscription-lists/demo.txt
+$ river -o ~/riverpy/ http://git.io/demo-list.txt
 
 #+END_SRC
-
-** Installation
-
-=$ pip install git+https://github.com/edavis/riverpy#egg=riverpy=
-
-** Checking feeds
-
-=$ river -b S3-BUCKET SUBSCRIPTION-LIST-URL=
-
-For example, here's how the above demo is generated:
-
-=$ river -b river.davising.com -e 150 https://dl.dropboxusercontent.com/u/19853263/feeds.txt=
 
 ** Subscription lists
 
