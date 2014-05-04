@@ -26,7 +26,8 @@ is installed, here's how you run riverpy:
 $ virtualenv ~/riverpy-env
 $ . ~/riverpy-env/bin/activate
 $ pip install git+https://github.com/edavis/riverpy#egg=riverpy
-$ river -o ~/riverpy/ https://raw.githubusercontent.com/edavis/riverpy/master/subscription-lists/demo.txt
+$ river -o ~/riverpy/ \
+    https://raw.githubusercontent.com/edavis/riverpy/master/subscription-lists/demo.txt
 
 #+END_SRC
 
