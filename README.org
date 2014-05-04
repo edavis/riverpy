@@ -16,6 +16,33 @@ If you're not on a Debian-based distro, replace "aptitude install"
 with whatever your distro uses. Similarly, libyaml might be under a
 different package name.
 
+*** redis
+
+Redis /should/ be running now, but check by typing =redis-cli=:
+
+If redis is running, you'll see this:
+
+#+BEGIN_SRC
+$ redis-cli
+127.0.0.1:6379>
+#+END_SRC
+
+If not, you'll see this:
+
+#+BEGIN_SRC
+$ redis-cli
+Could not connect to Redis at 127.0.0.1:6379: Connection refused
+not connected>
+#+END_SRC
+
+In either case, type =Ctrl+D= to exit.
+
+You'll need to start redis if it isn't running:
+
+On Mac OSX: =$ redis-server /usr/local/etc/redis.conf=
+
+On Linux: =$ sudo /etc/init.d/redis start=
+
 ** Using Amazon S3
 
 riverpy can write its files to local disk or to [[http://en.wikipedia.org/wiki/Amazon_S3][Amazon S3]]. If you
