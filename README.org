@@ -23,7 +23,7 @@ For example, here's how the above demo is generated:
 
 At the core of riverpy are "subscription lists."
 
-Subscription lists are files that contain RSS feed URLs. Each feed
+Subscription lists are files that contain RSS feeds. Each feed
 belongs to a category. Adding feeds to this file is how you "subscribe" to
 them.
 
