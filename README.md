@@ -53,11 +53,33 @@ each category defined in http://git.io/demo-list.txt and place them in
 
 ## Options
 
-TODO: explain available command-line arguments.
+Pass either `-b/--bucket` or `-o/--output` to tell `river` where to
+store the generated river.js files. At least one of these is
+required. You can pass both to have the files written to both places.
 
-## Generated files
+The bucket will be created if it doesn't already exist.
 
-TODO: explain manifest.json and js/json files.
+`-t/--threads` specifies the number of threads used to download your
+subscribed feeds. The default is four. Increasing this will speed up
+feed downloads but also use more system resources.
+
+`-e/--entries` sets the max number of objects in the
+`updatedFeeds.updatedFeed` array. The default is 100.
+
+`-i/--initial` sets the max number of objects in the
+`updatedFeeds.updatedFeed[n].item` array for newly subscribed
+feeds. The default is five. This prevents newly subscribed feeds from
+overwhelming a river.
+
+Previously subscribed feeds aren't subject to this limit.
+
+Use `--redis-host`, `--redis-port`, or `--redis-db` to change how
+`river` connects to redis. By default it'll connect to host 127.0.0.1,
+port 6379, database 0).
+
+Finally, a subscription list is required. `river` accepts both URLs
+and filenames here. The format of this file is explained in the next
+section.
 
 ## Subscription lists
 
@@ -84,6 +106,19 @@ You can have as many (or as few) categories you'd like. Though there
 must be at least one category.
 
 There's no limit to the number of feeds a category can contain.
+
+## Checking multiple subscription lists
+
+It's recommended to use a different redis database (via `--redis-db`) for
+each unique subscription list that `river` checks.
+
+If you use the same redis database for different subscription lists,
+categories with the same name will begin overwriting each other and
+it'll be a mess.
+
+## Generated files
+
+TODO: explain manifest.json and js/json files.
 
 ## Web frontend
 
