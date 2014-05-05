@@ -7,6 +7,10 @@
     - "Firehose" would be everything from all rivers
   - Write log output to file
   - Only update a given category with URL#name
+  - Notify feed addition/removal
+    - redis could keep track of the last seen collection of feeds each
+      run (a set?). If there's a change, add an element to
+      updatedFeeds.
 - Frontend:
   - Use permalinks to link directly to a river
   - Display spinner/progress bar when changing rivers

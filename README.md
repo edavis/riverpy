@@ -13,6 +13,9 @@ As Dave Winer [puts it][quote]: "It's an application that reads feeds
 you've subscribed to and presents only the new items, newest first. As
 you scroll down you go back in time, to older items."
 
+I find it a more pleasant and natural way of reading the
+news. Newspapers don't have unread counts. Why should RSS readers?
+
 Click [here][riverpy-demo] to see a demo of riverpy in action.
 
 [quote]: <http://river2.newsriver.org/#whatIsARiverOfNewsStyleAggregator>
@@ -20,9 +23,9 @@ Click [here][riverpy-demo] to see a demo of riverpy in action.
 
 ## Installation
 
-Before you begin, make sure [redis][] is installed. On a Mac, you can
-install it via [Homebrew][]. On Linux, your package manager should
-have it.
+Before you begin, make sure [redis][] is installed and running. On a
+Mac, you can install it via [Homebrew][]. On Linux, your package
+manager should have it.
 
 Once installed, install riverpy into a [virtualenv][]:
 
@@ -64,21 +67,20 @@ grouped into categories.
 Here's an example: http://git.io/demo-list.txt
 
 It contains two categories ("News" and "Tech News") and a handful of
-RSS feeds belogning to each.
+RSS feeds belonging to each.
 
 Subscription lists can be edited by any text editor (e.g., Notepad,
 TextEdit, etc.)
 
 The format itself is pretty simple. Each category has a name followed
-by a colon. Then each feed belonging to that category sits below it
-and follows this format:
+by a colon. Each feed belonging to that category follows this format:
 
 - two spaces
 - a dash
 - another space
 - the URL of the RSS feed
 
-You can have as many (or as few) categories as you want. Though there
+You can have as many (or as few) categories you'd like. Though there
 must be at least one category.
 
 There's no limit to the number of feeds a category can contain.
