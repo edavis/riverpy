@@ -1,7 +1,6 @@
 News:
   - http://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
   - http://news.yahoo.com/rss/
-  - http://feeds.reuters.com/reuters/topNews
   - http://feeds.feedburner.com/TheAtlantic
   - http://feeds.slate.com/slate
 
