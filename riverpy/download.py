@@ -109,7 +109,7 @@ class ParseFeed(threading.Thread):
         #
         # [1] http://www.niemanlab.org/feed/
         elif entry.get('title'):
-            obj['title'] = entry.get('title')
+            obj['title'] = self.clean_text(entry.get('title'))
             obj['body'] = ''
 
         if entry.get('link'):
