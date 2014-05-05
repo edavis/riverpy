@@ -38,6 +38,9 @@ def main():
     parser.add_argument('feeds', help='Subscription list to use. Accepts URLs and filenames.')
     args = parser.parse_args()
 
+    if not args.bucket and not args.output:
+        raise SystemExit('Need either a -b/--bucket or -o/--output directory. Exiting.')
+
     redis_client = redis.Redis(
         host=args.redis_host,
         port=args.redis_port,
