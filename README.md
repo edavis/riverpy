@@ -9,19 +9,20 @@ riverpy is a River of News aggregator written in Python that generates
 
 A River of News aggregator is a certain type of RSS reader.
 
-As Dave Winer [puts it][]: "It's an application that reads feeds
+As Dave Winer [puts it][quote]: "It's an application that reads feeds
 you've subscribed to and presents only the new items, newest first. As
 you scroll down you go back in time, to older items."
 
 Click [here][riverpy-demo] to see a demo of riverpy in action.
 
-[puts it]: <http://river2.newsriver.org/#whatIsARiverOfNewsStyleAggregator>
+[quote]: <http://river2.newsriver.org/#whatIsARiverOfNewsStyleAggregator>
 [riverpy-demo]: <http://riverpy-demo.s3.amazonaws.com/index.html>
 
 ## Installation
 
-Make sure [redis][] is installed. On a Mac, you can install it via
-[Homebrew][]. On Linux, your package manager should have it.
+Before you begin, make sure [redis][] is installed. On a Mac, you can
+install it via [Homebrew][]. On Linux, your package manager should
+have it.
 
 Once installed, install riverpy into a [virtualenv][]:
 
@@ -37,24 +38,23 @@ $ pip install git+https://github.com/edavis/riverpy#egg=riverpy
 
 ## Quick Start
 
-Once everything is installed, generate the river.js files with `river`:
+Once everything is installed, generate the files with `river`:
 
 ```bash
 $ river -o ~/riverpy/ http://git.io/demo-list.txt
 ```
 
-This'll generate separate river.js files for the "News" and "Tech
-News" categories (defined [here][demo-list.txt]) and place them in
-`~/riverpy/rivers/`.
-
-From here, you can begin creating your own subscription lists. See the
-next section for the subscription list format.
-
-[demo-list.txt]: <http://git.io/demo-list.txt>
+This'll create manifest.json and separate river.js formatted files for
+each category defined in http://git.io/demo-list.txt and place them in
+`~/riverpy/`.
 
 ## Options
 
 TODO: explain available command-line arguments.
+
+## Generated files
+
+TODO: explain manifest.json and js/json files.
 
 ## Subscription lists
 
@@ -64,14 +64,14 @@ grouped into categories.
 Here's an example: http://git.io/demo-list.txt
 
 It contains two categories ("News" and "Tech News") and a handful of
-RSS feeds.
+RSS feeds belogning to each.
 
 Subscription lists can be edited by any text editor (e.g., Notepad,
 TextEdit, etc.)
 
 The format itself is pretty simple. Each category has a name followed
-by a colon. Then each feed belonging to that category follows this
-format:
+by a colon. Then each feed belonging to that category sits below it
+and follows this format:
 
 - two spaces
 - a dash
@@ -79,13 +79,14 @@ format:
 - the URL of the RSS feed
 
 You can have as many (or as few) categories as you want. Though there
-must be at least one defined category.
+must be at least one category.
 
 There's no limit to the number of feeds a category can contain.
 
 ## Web frontend
 
-TODO: explain how to view the river.js files
+TODO: explain how to view the river.js files, CORS, and optionally
+setting up S3 as a standard website host.
 
 ## Refreshing feeds automatically
 
