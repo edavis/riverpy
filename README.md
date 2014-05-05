@@ -96,16 +96,7 @@ TODO: explain crontab
 
 ## Amazon S3
 
-riverpy can write its files to local disk or to Amazon S3. If you
-won't be using S3 you can skip this section.
-
-You'll need an Amazon AWS account to use S3. Creating an account is
-beyond the scope of this guide.
-
-Once an account has been created, you'll need to configure your
-credentials so riverpy can use them.
-
-TODO: needed permissions?
+TODO: explain boto and necessary credentials
 
 ## OPML subscription lists
 
