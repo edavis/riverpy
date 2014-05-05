@@ -1,9 +1,7 @@
 # riverpy
 
-riverpy is a River of News aggregator that generates [river.js][]
-files.
-
-It's written in Python.
+riverpy is a River of News aggregator written in Python that generates
+[river.js][] files.
 
 [river.js]: <http://riverjs.org/>
 
