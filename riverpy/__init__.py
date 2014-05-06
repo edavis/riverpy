@@ -10,7 +10,7 @@ from path import path
 from bucket import Bucket
 from download import ParseFeed
 from utils import format_timestamp, slugify
-from riverjs import write_riverjs, generate_manifest
+from riverjs import serialize_riverjs, serialize_manifest
 from parser import parse_subscription_list
 
 logging.basicConfig(
@@ -30,6 +30,8 @@ def main():
     parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds. [default: %(default)s]')
     parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates. [default: %(default)s]')
     parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items. [default: %(default)s]')
+
+    parser.add_argument('-cb', '--callback', help='Generate JSONP using this callback function.')
 
     parser.add_argument('--redis-host', default='127.0.0.1', help='Redis host to use. [default: %(default)s]')
     parser.add_argument('--redis-port', default=6379, type=int, help='Redis port to use. [default: %(default)s]')
@@ -80,7 +82,8 @@ def main():
     logger.info('Done checking feeds')
 
     for river in rivers:
-        river_key = 'rivers:%s' % river['name']
+        river_name = river['name']
+        river_key = 'rivers:%s' % river_name
         river_updates = [cPickle.loads(update) for update in redis_client.lrange(river_key, 0, -1)]
         river_obj = {
             'updatedFeeds': {
@@ -95,14 +98,32 @@ def main():
                 'secs': '',
             },
         }
+
+        riverjs = serialize_riverjs(river_obj, args.callback)
+        filename = 'rivers/%s.%s' % (
+            river_name,
+            'js' if args.callback else 'json',
+        )
+        logger.info('Writing %s (%d bytes)' % (filename, len(riverjs)))
+
         if s3_bucket:
-            write_riverjs(s3_bucket, river['name'], river_obj)
+            s3_bucket.write_string(filename, riverjs, 'application/json')
 
         if output_directory:
-            write_riverjs(output_directory, river['name'], river_obj)
+            fname = output_directory.joinpath(filename)
+            fname.parent.makedirs_p()
+            with fname.open('w') as fp:
+                fp.write(riverjs)
+
+    # Build the manifest, as JSONP if -cb/--callback was provided
+    manifest = serialize_manifest(rivers, args.callback)
+    filename = 'manifest.%s' % ('js' if args.callback else 'json')
+    logger.info('Writing %s (%d bytes)' % (filename, len(manifest)))
 
     if s3_bucket:
-        generate_manifest(s3_bucket, rivers)
+        s3_bucket.write_string(filename, manifest, 'application/json')
 
     if output_directory:
-        generate_manifest(output_directory, rivers)
+        fname = output_directory.joinpath(filename)
+        with fname.open('w') as fp:
+            fp.write(manifest)
