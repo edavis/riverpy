@@ -1,9 +1,6 @@
 # -*- mode: org -*-
 
 - Backend:
-  - Add "special" rivers:
-    - "Latest" would be everything from the last run
-    - "Firehose" would be everything from all rivers
   - Write log output to file
   - Only update a given category with URL#name
   - Notify feed addition/removal

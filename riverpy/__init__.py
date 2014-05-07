@@ -81,6 +81,12 @@ def main():
 
     logger.info('Done checking feeds')
 
+    # Add the special 'firehose' feed so it gets generated
+    rivers.append({
+        'name': 'firehose',
+        'title': 'Firehose',
+    })
+
     for river in rivers:
         river_name = river['name']
         river_key = 'rivers:%s' % river_name
