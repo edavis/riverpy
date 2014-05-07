@@ -13,7 +13,7 @@ riverApp.controller('RiverController', ['$scope', '$http', function($scope, $htt
 	}
     });
 
-    $http.get('manifest.json').success(function(obj) {
+    $http.get('manifest.js').success(function(obj) {
 	$scope.rivers = obj;
 	$scope.currentRiver = obj[0];
     });
