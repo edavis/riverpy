@@ -74,6 +74,8 @@ river. The default is five.
 Feeds that have been seen at least once before aren't subject to this
 limit.
 
+Pass `--json` to have `river` produce raw JSON files rather than JSONP.
+
 Use `--redis-host`, `--redis-port`, or `--redis-db` to change how
 `river` connects to redis. By default it'll connect to host 127.0.0.1,
 port 6379, database 0.
@@ -111,30 +113,26 @@ There's no limit to the number of feeds a category can contain.
 
 ## Generated files
 
-`river` generates a handful of files once it's finished.
+At the top-level of the destination will be a `manifest.js` file. This
+file is generated to allow third-party programs an "entry point" so
+they can find and display all available rivers. It is an array of
+objects, each containing two keys: `url` and `title`.
 
-At the top-level of the destination will be a `manifest.json`
-file. The "Web frontend" section goes into detail about this file and
-how it's used.
-
-Next to `manifest.json` will be a `rivers/` sub-folder. Inside this
-folder, by default, there will be a `.json` file for each category in
-your subscription list. The category names are lowercased and special
+Next to `manifest.js` will be a `rivers` sub-folder. Inside this
+folder there will be a `.js` file for each category in your
+subscription list. The category names are lowercased and special
 characters are removed.
 
-These `.json` files contain [JSON][] objects formatted according to
-the [river.js][] specification.
+These `.js` files are formatted according to the [river.js][]
+specification.
 
 [JSON]: <http://en.wikipedia.org/wiki/JSON>
+[JSON]: <http://en.wikipedia.org/wiki/JSONP>
 
 ## Web frontend
 
 TODO: explain how to view the river.js files, CORS, and optionally
 setting up S3 as a standard website host.
-
-### JSONP
-
-TODO: explain how to create JSONP instead of JSON (and why you'd do that).
 
 ## Checking multiple subscription lists
 

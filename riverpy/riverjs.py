@@ -6,7 +6,7 @@ from bucket import Bucket
 
 logger = logging.getLogger(__name__)
 
-def serialize_riverjs(river_obj, callback):
+def serialize_riverjs(river_obj, create_json):
     """
     Take a fully unpickled river object and serialize it into a JSON
     string.
@@ -14,20 +14,22 @@ def serialize_riverjs(river_obj, callback):
     If callback is provided, make it JSONP.
     """
     serialized = json.dumps(river_obj, sort_keys=True)
-    if callback:
-        return '%s(%s)' % (callback, serialized)
-    else:
+    if create_json:
         return serialized
+    else:
+        return 'onGetRiverStream(%s)' % serialized
 
-def serialize_manifest(rivers, callback):
+def serialize_manifest(rivers, create_json):
     manifest = []
     for river in rivers:
         manifest.append({
-            'url': 'rivers/%s.%s' % (river['name'], 'js' if callback else 'json'),
+            'url': 'rivers/%s.js' % river['name'],
             'title': river['title'],
         })
-    manifest = sorted(manifest, key=operator.itemgetter('title'))
-    if callback:
-        return 'onGetRiverManifest(%s)' % json.dumps(manifest)
+    serialized = json.dumps(
+        sorted(manifest, key=operator.itemgetter('title'))
+    )
+    if create_json:
+        return serialized
     else:
-        return json.dumps(manifest)
+        return 'onGetRiverManifest(%s)' % serialized

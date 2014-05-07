@@ -31,7 +31,7 @@ def main():
     parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates. [default: %(default)s]')
     parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items. [default: %(default)s]')
 
-    parser.add_argument('-cb', '--callback', help='Generate JSONP using this callback function.')
+    parser.add_argument('--json', action='store_true', help='Generate JSON instead of JSONP. [default: %(default)s]')
 
     parser.add_argument('--redis-host', default='127.0.0.1', help='Redis host to use. [default: %(default)s]')
     parser.add_argument('--redis-port', default=6379, type=int, help='Redis port to use. [default: %(default)s]')
@@ -99,11 +99,8 @@ def main():
             },
         }
 
-        riverjs = serialize_riverjs(river_obj, args.callback)
-        filename = 'rivers/%s.%s' % (
-            river_name,
-            'js' if args.callback else 'json',
-        )
+        riverjs = serialize_riverjs(river_obj, args.json)
+        filename = 'rivers/%s.js' % river_name
         logger.info('Writing %s (%d bytes)' % (filename, len(riverjs)))
 
         if s3_bucket:
@@ -115,9 +112,8 @@ def main():
             with fname.open('w') as fp:
                 fp.write(riverjs)
 
-    # Build the manifest, as JSONP if -cb/--callback was provided
-    manifest = serialize_manifest(rivers, args.callback)
-    filename = 'manifest.%s' % ('js' if args.callback else 'json')
+    manifest = serialize_manifest(rivers, args.json)
+    filename = 'manifest.js'
     logger.info('Writing %s (%d bytes)' % (filename, len(manifest)))
 
     if s3_bucket:

@@ -1,7 +1,6 @@
 # -*- mode: org -*-
 
 - Backend:
-  - Add option to generate JSON and/or JSONP
   - Add "special" rivers:
     - "Latest" would be everything from the last run
     - "Firehose" would be everything from all rivers
