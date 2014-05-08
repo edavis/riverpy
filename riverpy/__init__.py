@@ -62,6 +62,7 @@ def main():
         output_directory.makedirs_p()
 
     rivers = list(parse_subscription_list(args.feeds))
+    rivers = random.shuffle(rivers)
     for river in rivers:
         feeds = list(set(river['feeds']))
         total_feeds += len(feeds)
