@@ -8,6 +8,7 @@
       run (a set?). If there's a change, add an element to
       updatedFeeds.
   - Use conditional GET headers
+  - Enable support for PubSubHubbub and rssCloud
 - Frontend:
   - Use permalinks to link directly to a river
   - Display spinner/progress bar when changing rivers
