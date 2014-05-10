@@ -131,7 +131,7 @@ class ParseFeed(threading.Thread):
                 logger.exception('Failed to load %s' % feed_url)
             else:
                 try:
-                    feed_parsed = feedparser.parse(response.content)
+                    feed_parsed = feedparser.parse(response.text)
                 except ValueError as ex:
                     logger.exception('Failed to parse %s' % feed_url)
                     break
