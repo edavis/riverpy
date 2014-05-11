@@ -14,7 +14,7 @@ from riverjs import serialize_riverjs, serialize_manifest
 from parser import parse_subscription_list
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='[%(levelname)-5s] %(asctime)s - %(name)s - %(message)s',
 )
 

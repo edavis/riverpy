@@ -10,9 +10,11 @@ setup(
     entry_points = {
         'console_scripts': [
             'river = riverpy:main',
+            'river-pubsub = riverpy.realtime.pubsub:pubsub_server',
         ],
     },
     install_requires = [
+        'Flask==0.10.1',
         'PyYAML==3.10',
         'arrow==0.4.2',
         'bleach==1.2.2',

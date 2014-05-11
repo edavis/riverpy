@@ -147,6 +147,12 @@ it'll be a mess.
 
 TODO: explain crontab
 
+## Realtime
+
+riverpy supports PubSubHubbub.
+
+Default port: 5917
+
 ## Amazon S3
 
 TODO: explain boto and necessary credentials
