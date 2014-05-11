@@ -168,6 +168,8 @@ class ParseFeed(threading.Thread):
                 feed_key = '%s:%s' % (river_name, feed_url)
                 new_feed = (self.redis_client.llen(feed_key) == 0)
 
+                new_timestamps = []
+
                 feed_updates = []
                 for entry in feed_parsed.entries:
                     # We must keep track of feed updates so they're only seen
@@ -191,9 +193,14 @@ class ParseFeed(threading.Thread):
                     update = self.populate_feed_update(entry)
                     feed_updates.append(update)
 
-                    # Add new items to the timestamp log
                     timestamp = self.entry_timestamp(entry)
-                    self.log_entry_timestamp(feed_url, timestamp.timestamp)
+                    new_timestamps.append(timestamp.timestamp)
+
+                # Have to reverse the timestamps before we LPUSH
+                # otherwise the oldest timestamps will be before newer
+                # timestamps.
+                for timestamp in reversed(new_timestamps):
+                    self.log_entry_timestamp(timestamp)
 
                 # Keep --initial most recent updates if this is the
                 # first time we've seen the feed
