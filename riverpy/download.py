@@ -125,19 +125,19 @@ class ParseFeed(threading.Thread):
         response.raise_for_status()
         key = 'http:headers:%s' % feed_url
         self.redis_client.hmset(key, response.headers)
-        return response
+        return response.text
 
     def run(self):
         while True:
             river_name, feed_url = self.inbox.get()
             logger.info('Checking %s' % feed_url)
             try:
-                response = self.request_feed(feed_url)
+                feed_content = self.request_feed(feed_url)
             except requests.exceptions.RequestException as ex:
                 logger.exception('Failed to load %s' % feed_url)
             else:
                 try:
-                    feed_parsed = feedparser.parse(response.content)
+                    feed_parsed = feedparser.parse(feed_content)
                 except ValueError as ex:
                     logger.exception('Failed to parse %s' % feed_url)
                     break
