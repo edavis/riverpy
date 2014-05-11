@@ -121,20 +121,38 @@ class ParseFeed(threading.Thread):
         return obj
 
     def request_feed(self, feed_url):
-        response = requests.get(feed_url, timeout=15, verify=False)
+        headers_key = 'http:headers:%s' % feed_url
+        body_key = 'http:body:%s' % feed_url
+
+        request_headers = {}
+        (last_modified, etag) = self.redis_client.hmget(headers_key, 'last-modified', 'etag')
+        if last_modified:
+            request_headers['If-Modified-Since'] = last_modified
+        if etag:
+            request_headers['If-None-Match'] = etag
+
+        logger.debug('[%s] Requesting with headers: %r' % (feed_url, request_headers))
+        response = requests.get(feed_url, headers=request_headers, timeout=15, verify=False)
         response.raise_for_status()
-        key = 'http:headers:%s' % feed_url
-        self.redis_client.hmset(key, response.headers)
-        return response.text
+        logger.debug('[%s] Status code: %d' % (feed_url, response.status_code))
+
+        logger.info('Checked %s (%d)' % (feed_url, response.status_code))
+
+        self.redis_client.hmset(headers_key, response.headers)
+
+        if response.status_code == 200:
+            self.redis_client.set(body_key, response.text)
+            return response.text
+        elif response.status_code == 304:
+            return self.redis_client.get(body_key)
 
     def run(self):
         while True:
             river_name, feed_url = self.inbox.get()
-            logger.info('Checking %s' % feed_url)
             try:
                 feed_content = self.request_feed(feed_url)
             except requests.exceptions.RequestException as ex:
-                logger.exception('Failed to load %s' % feed_url)
+                logger.exception('Failed to check %s' % feed_url)
             else:
                 try:
                     feed_parsed = feedparser.parse(feed_content)
