@@ -1,7 +1,6 @@
 # -*- mode: org -*-
 
 - Backend:
-  - Write log output to file
   - Only update a given category with URL#name
   - Notify feed addition/removal
     - redis could keep track of the last seen collection of feeds each

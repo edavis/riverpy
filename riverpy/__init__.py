@@ -16,6 +16,7 @@ from parser import parse_subscription_list
 logging.basicConfig(
     level=logging.INFO,
     format='[%(levelname)-5s] %(asctime)s - %(name)s - %(message)s',
+    filename='river.log',
 )
 
 logging.getLogger('requests').setLevel(logging.WARNING)
