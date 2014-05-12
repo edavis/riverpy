@@ -146,11 +146,6 @@ class ParseFeed(threading.Thread):
         elif response.status_code == 304:
             return self.redis_client.get(body_key)
 
-    def log_entry_timestamp(self, feed_url, timestamp, limit=250):
-        timestamp_key = 'timestamps:%s' % feed_url
-        self.redis_client.lpush(timestamp_key, timestamp)
-        self.redis_client.ltrim(timestamp_key, 0, limit - 1)
-
     def run(self):
         while True:
             river_name, feed_url = self.inbox.get()
@@ -191,10 +186,6 @@ class ParseFeed(threading.Thread):
                     update = self.populate_feed_update(entry)
                     feed_updates.append(update)
 
-                    # Add new items to the timestamp log
-                    timestamp = self.entry_timestamp(entry)
-                    self.log_entry_timestamp(feed_url, timestamp.timestamp)
-
                 # Keep --initial most recent updates if this is the
                 # first time we've seen the feed
                 if new_feed:
@@ -216,10 +207,6 @@ class ParseFeed(threading.Thread):
                     firehose_key = 'rivers:firehose'
                     self.redis_client.lpush(firehose_key, cPickle.dumps(river_update))
                     self.redis_client.ltrim(firehose_key, 0, self.cli_args.entries * 2 - 1)
-
-                else:
-                    # Add a "virtual" timestamp so the update interval will increase
-                    self.log_entry_timestamp(feed_url, arrow.utcnow().timestamp)
 
             finally:
                 self.inbox.task_done()
