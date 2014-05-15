@@ -25,6 +25,26 @@ def init_logging(log_filename):
         handler.setFormatter(fmt)
         logger.addHandler(handler)
 
+def generate_river_obj(redis_client, river_name, args):
+    """
+    Return a dict that matches the river.js spec.
+    """
+    river_key = 'rivers:%s' % river_name
+    river_updates = [cPickle.loads(update) for update in redis_client.lrange(river_key, 0, -1)]
+    return {
+        'updatedFeeds': {
+            'updatedFeed': river_updates,
+        },
+        'metadata': {
+            'docs': 'http://riverjs.org/',
+            'subscriptionList': args.feeds,
+            'whenGMT': format_timestamp(arrow.utcnow()),
+            'whenLocal': format_timestamp(arrow.utcnow().to('local')),
+            'version': '3',
+            'secs': '',
+        },
+    }
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bucket', help='Destination S3 bucket.')
@@ -97,22 +117,7 @@ def main():
 
     for river in rivers:
         river_name = river['name']
-        river_key = 'rivers:%s' % river_name
-        river_updates = [cPickle.loads(update) for update in redis_client.lrange(river_key, 0, -1)]
-        river_obj = {
-            'updatedFeeds': {
-                'updatedFeed': river_updates,
-            },
-            'metadata': {
-                'docs': 'http://riverjs.org/',
-                'subscriptionList': args.feeds,
-                'whenGMT': format_timestamp(arrow.utcnow()),
-                'whenLocal': format_timestamp(arrow.utcnow().to('local')),
-                'version': '3',
-                'secs': '',
-            },
-        }
-
+        river_obj = generate_river_obj(redis_client, river_name, args)
         riverjs = serialize_riverjs(river_obj, args.json)
         filename = 'rivers/%s.js' % river_name
         logger.info('Writing %s (%d bytes)' % (filename, len(riverjs)))
