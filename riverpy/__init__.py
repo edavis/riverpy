@@ -13,16 +13,24 @@ from utils import format_timestamp, slugify
 from riverjs import serialize_riverjs, serialize_manifest
 from parser import parse_subscription_list
 
-logging.getLogger('requests').setLevel(logging.WARNING)
-
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+def init_logging(log_filename):
+    fh = logging.FileHandler(log_filename)
+    ch = logging.StreamHandler()
+    fmt = logging.Formatter('[%(levelname)-5s] %(asctime)s - %(name)s - %(message)s')
+    for handler in [fh, ch]:
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(fmt)
+        logger.addHandler(handler)
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bucket', help='Destination S3 bucket.')
     parser.add_argument('-o', '--output', help='Destination directory.')
 
-    parser.add_argument('-l', '--log', default='river.log', help='Location of log file. [default: %(default)s]')
+    parser.add_argument('-l', '--log-filename', default='river.log', help='Location of log file. [default: %(default)s]')
     parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds. [default: %(default)s]')
     parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates. [default: %(default)s]')
     parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items. [default: %(default)s]')
@@ -36,11 +44,7 @@ def main():
     parser.add_argument('feeds', help='Subscription list to use. Accepts URLs and filenames.')
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[%(levelname)-5s] %(asctime)s - %(name)s - %(message)s',
-        filename=args.log,
-    )
+    init_logging(args.log_filename)
 
     if not args.bucket and not args.output:
         raise SystemExit('Need either a -b/--bucket or -o/--output directory. Exiting.')
