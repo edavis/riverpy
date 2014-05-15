@@ -25,7 +25,7 @@ def init_logging(log_filename):
         handler.setFormatter(fmt)
         logger.addHandler(handler)
 
-def generate_river_obj(redis_client, river_name, args):
+def generate_river_obj(redis_client, river_name, feed_list):
     """
     Return a dict that matches the river.js spec.
     """
@@ -37,7 +37,7 @@ def generate_river_obj(redis_client, river_name, args):
         },
         'metadata': {
             'docs': 'http://riverjs.org/',
-            'subscriptionList': args.feeds,
+            'subscriptionList': feed_list or '',
             'whenGMT': format_timestamp(arrow.utcnow()),
             'whenLocal': format_timestamp(arrow.utcnow().to('local')),
             'version': '3',
@@ -117,7 +117,7 @@ def main():
 
     for river in rivers:
         river_name = river['name']
-        river_obj = generate_river_obj(redis_client, river_name, args)
+        river_obj = generate_river_obj(redis_client, river_name, args.feeds)
         riverjs = serialize_riverjs(river_obj, args.json)
         filename = 'rivers/%s.js' % river_name
         logger.info('Writing %s (%d bytes)' % (filename, len(riverjs)))
