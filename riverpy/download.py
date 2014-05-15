@@ -47,13 +47,15 @@ class ParseFeed(threading.Thread):
             return cleaned
 
     def entry_fingerprint(self, entry):
-        s = ''.join([
-            entry.get('title', ''),
-            entry.get('link', ''),
-            entry.get('guid', ''),
-        ])
-        s = s.encode('utf-8', 'ignore')
-        return hashlib.sha1(s).hexdigest()
+        if entry.get('guid'):
+            return entry.get('guid')
+        else:
+            s = ''.join([
+                entry.get('title', ''),
+                entry.get('link', ''),
+            ])
+            s = s.encode('utf-8', 'ignore')
+            return hashlib.sha1(s).hexdigest()
 
     def new_entry(self, feed_key, entry):
         """
