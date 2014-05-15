@@ -57,16 +57,6 @@ def main():
     total_feeds = 0
     inbox = Queue.Queue()
 
-    s3_bucket = None
-    output_directory = None
-
-    if args.bucket:
-        s3_bucket = Bucket(args.bucket)
-
-    if args.output:
-        output_directory = path(args.output)
-        output_directory.makedirs_p()
-
     rivers = list(parse_subscription_list(args.feeds))
     random.shuffle(rivers)
     for river in rivers:
@@ -93,6 +83,17 @@ def main():
         'name': 'firehose',
         'title': 'Firehose',
     })
+
+    if args.bucket:
+        s3_bucket = Bucket(args.bucket)
+    else:
+        s3_bucket = None
+
+    if args.output:
+        output_directory = path(args.output)
+        output_directory.makedirs_p()
+    else:
+        output_directory = None
 
     for river in rivers:
         river_name = river['name']
