@@ -133,10 +133,8 @@ class ParseFeed(threading.Thread):
         if etag:
             request_headers['If-None-Match'] = etag
 
-        logger.debug('[%s] Requesting with headers: %r' % (feed_url, request_headers))
         response = requests.get(feed_url, headers=request_headers, timeout=15, verify=False)
         response.raise_for_status()
-        logger.debug('[%s] Status code: %d' % (feed_url, response.status_code))
 
         logger.info('Checked %s (%d)' % (feed_url, response.status_code))
 
