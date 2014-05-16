@@ -202,13 +202,13 @@ class ParseFeed(threading.Thread):
 
                 # Add any new timestamps found during this check
                 if timestamps:
-                    logger.info('%s had %d new entries' % (feed_url, len(timestamps)))
+                    logger.info('%d new entries for %s' % (len(timestamps), feed_url))
                     new_timestamps = [obj.timestamp for obj in timestamps]
                     self.redis_client.lpush(timestamp_key, *new_timestamps)
                     self.redis_client.sort(timestamp_key, desc=True, store=timestamp_key)
                     self.redis_client.ltrim(timestamp_key, 0, 99)
                 else:
-                    logger.info('%s had no new entries' % feed_url)
+                    logger.info('No new entries for %s' % feed_url)
 
                 history = self.redis_client.lrange(timestamp_key, 0, 9 if timestamps else 8)
                 if not timestamps:
