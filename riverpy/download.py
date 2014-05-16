@@ -146,6 +146,15 @@ class ParseFeed(threading.Thread):
         elif response.status_code == 304:
             return self.redis_client.get(body_key)
 
+    def average_update_interval(self, history_timestamps):
+        it = iter(history_timestamps)
+        first = arrow.get(next(it))
+        delta = timedelta()
+        for timestamp in it:
+            delta += (first - arrow.get(timestamp))
+            first = arrow.get(timestamp)
+        return delta / len(history_timestamps)
+
     def run(self):
         while True:
             feed_url = self.inbox.get()
@@ -164,6 +173,8 @@ class ParseFeed(threading.Thread):
                 new_feed = (self.redis_client.llen(feed_key) == 0)
 
                 feed_updates = []
+                timestamps = []
+
                 for entry in feed_parsed.entries:
                     # We must keep track of feed updates so they're only seen
                     # once. Here's how that happens:
@@ -185,11 +196,30 @@ class ParseFeed(threading.Thread):
 
                     update = self.populate_feed_update(entry)
                     feed_updates.append(update)
+                    timestamps.append(self.entry_timestamp(entry))
 
-                future_update = arrow.utcnow() + timedelta(seconds=30*60)
+                timestamp_key = '%s:timestamps' % feed_url
+
+                # Add any new timestamps found during this check
+                if timestamps:
+                    logger.info('%s had %d new entries' % (feed_url, len(timestamps)))
+                    new_timestamps = [obj.timestamp for obj in timestamps]
+                    self.redis_client.lpush(timestamp_key, *new_timestamps)
+                    self.redis_client.sort(timestamp_key, desc=True, store=timestamp_key)
+                    self.redis_client.ltrim(timestamp_key, 0, 99)
+                else:
+                    logger.info('%s had no new entries' % feed_url)
+
+                history = self.redis_client.lrange(timestamp_key, 0, 9 if timestamps else 8)
+                if not timestamps:
+                    # See http://goo.gl/X6QhWN for why we do this
+                    history.insert(0, arrow.utcnow().timestamp)
+
+                delta = self.average_update_interval(history)
+                future_update = arrow.utcnow() + delta
                 fmt = format_timestamp(future_update.to('local'))
 
-                logger.info('Next check for %s: %s' % (feed_url, fmt))
+                logger.info('Next check for %s: %s (%d seconds)' % (feed_url, fmt, delta.seconds))
                 self.redis_client.zadd('next_check', feed_url, future_update.timestamp)
 
                 # Keep --initial most recent updates if this is the
