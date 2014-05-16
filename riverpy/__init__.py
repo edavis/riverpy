@@ -52,6 +52,12 @@ def outdated_feeds(redis_client):
     """
     return redis_client.zrangebyscore('next_check', '-inf', arrow.utcnow().timestamp)
 
+def upcoming_feeds(redis_client, num=5):
+    """
+    Return the feeds that are next to be checked.
+    """
+    return redis_client.zrange('next_check', 0, num - 1, withscores=True)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bucket', help='Destination S3 bucket.')
@@ -114,4 +120,11 @@ def main():
         for feed_url in outdated_feeds(redis_client):
             inbox.put(feed_url)
         inbox.join()
+
+        for (feed_url, timestamp) in upcoming_feeds(redis_client):
+            obj = arrow.get(timestamp).to('local')
+            future = obj - arrow.utcnow()
+            logger.debug((feed_url, obj, future.seconds))
+
+        logger.debug('')
         time.sleep(15)
