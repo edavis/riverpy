@@ -8,7 +8,7 @@ import hashlib
 import requests
 import threading
 import feedparser
-from datetime import datetime
+from datetime import datetime, timedelta
 from utils import format_timestamp
 
 logger = logging.getLogger(__name__)
@@ -148,7 +148,7 @@ class ParseFeed(threading.Thread):
 
     def run(self):
         while True:
-            river_name, feed_url = self.inbox.get()
+            feed_url = self.inbox.get()
             try:
                 feed_content = self.request_feed(feed_url)
             except requests.exceptions.RequestException as ex:
@@ -160,7 +160,7 @@ class ParseFeed(threading.Thread):
                     logger.exception('Failed to parse %s' % feed_url)
                     break
 
-                feed_key = '%s:%s' % (river_name, feed_url)
+                feed_key = '%s:entries' % feed_url
                 new_feed = (self.redis_client.llen(feed_key) == 0)
 
                 feed_updates = []
@@ -186,6 +186,12 @@ class ParseFeed(threading.Thread):
                     update = self.populate_feed_update(entry)
                     feed_updates.append(update)
 
+                future_update = arrow.utcnow() + timedelta(seconds=30*60)
+                fmt = format_timestamp(future_update.to('local'))
+
+                logger.info('Next check for %s: %s' % (feed_url, fmt))
+                self.redis_client.zadd('next_check', feed_url, future_update.timestamp)
+
                 # Keep --initial most recent updates if this is the
                 # first time we've seen the feed
                 if new_feed:
@@ -200,9 +206,11 @@ class ParseFeed(threading.Thread):
                         'websiteUrl': feed_parsed.feed.get('link', ''),
                         'whenLastUpdate': format_timestamp(arrow.utcnow()),
                     }
-                    river_key = 'rivers:%s' % river_name
-                    self.redis_client.lpush(river_key, cPickle.dumps(river_update))
-                    self.redis_client.ltrim(river_key, 0, self.cli_args.entries - 1)
+
+                    for river_name in self.redis_client.smembers('%s:rivers' % feed_url):
+                        river_key = 'rivers:%s' % river_name
+                        self.redis_client.lpush(river_key, cPickle.dumps(river_update))
+                        self.redis_client.ltrim(river_key, 0, self.cli_args.entries - 1)
 
                     firehose_key = 'rivers:firehose'
                     self.redis_client.lpush(firehose_key, cPickle.dumps(river_update))

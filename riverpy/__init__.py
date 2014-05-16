@@ -1,3 +1,4 @@
+import time
 import redis
 import arrow
 import Queue
@@ -45,6 +46,12 @@ def generate_river_obj(redis_client, river_name, feed_list):
         },
     }
 
+def outdated_feeds(redis_client):
+    """
+    Return all the feeds that need to be checked.
+    """
+    return redis_client.zrangebyscore('next_check', '-inf', arrow.utcnow().timestamp)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bucket', help='Destination S3 bucket.')
@@ -78,14 +85,12 @@ def main():
     inbox = Queue.Queue()
 
     rivers = list(parse_subscription_list(args.feeds))
-    random.shuffle(rivers)
     for river in rivers:
-        feeds = list(set(river['feeds']))
-        total_feeds += len(feeds)
-        logger.info("Found category '%s' (%d feeds)" % (river['title'], len(feeds)))
-        random.shuffle(feeds)
-        for feed in feeds:
-            inbox.put((river['name'], feed))
+        for feed_url in river['feeds']:
+            redis_client.sadd('%s:rivers' % feed_url, river['name'])
+            if redis_client.zrank('next_check', feed_url) is None:
+                redis_client.zadd('next_check', feed_url, -1)
+        total_feeds += len(river['feeds'])
 
     logger.info('In total, found %d categories (%d feeds)' % (len(rivers), total_feeds))
 
@@ -93,16 +98,6 @@ def main():
         p = ParseFeed(inbox, args)
         p.daemon = True
         p.start()
-
-    inbox.join()
-
-    logger.info('Done checking feeds')
-
-    # Add the special 'firehose' feed so it gets generated
-    rivers.append({
-        'name': 'firehose',
-        'title': 'Firehose',
-    })
 
     if args.bucket:
         s3_bucket = Bucket(args.bucket)
@@ -115,30 +110,8 @@ def main():
     else:
         output_directory = None
 
-    for river in rivers:
-        river_name = river['name']
-        river_obj = generate_river_obj(redis_client, river_name, args.feeds)
-        riverjs = serialize_riverjs(river_obj, args.json)
-        filename = 'rivers/%s.js' % river_name
-        logger.info('Writing %s (%d bytes)' % (filename, len(riverjs)))
-
-        if s3_bucket:
-            s3_bucket.write_string(filename, riverjs, 'application/json')
-
-        if output_directory:
-            fname = output_directory.joinpath(filename)
-            fname.parent.makedirs_p()
-            with fname.open('w') as fp:
-                fp.write(riverjs)
-
-    manifest = serialize_manifest(rivers, args.json)
-    filename = 'manifest.js'
-    logger.info('Writing %s (%d bytes)' % (filename, len(manifest)))
-
-    if s3_bucket:
-        s3_bucket.write_string(filename, manifest, 'application/json')
-
-    if output_directory:
-        fname = output_directory.joinpath(filename)
-        with fname.open('w') as fp:
-            fp.write(manifest)
+    while True:
+        for feed_url in outdated_feeds(redis_client):
+            inbox.put(feed_url)
+        inbox.join()
+        time.sleep(15)
