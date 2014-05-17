@@ -10,6 +10,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'river = riverpy:main',
+            'river-writer = riverpy:river_writer',
         ],
     },
     install_requires = [

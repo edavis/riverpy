@@ -241,10 +241,12 @@ class ParseFeed(threading.Thread):
                         river_key = 'rivers:%s' % river_name
                         self.redis_client.lpush(river_key, cPickle.dumps(river_update))
                         self.redis_client.ltrim(river_key, 0, self.cli_args.entries - 1)
+                        self.redis_client.sadd('updated_rivers', river_name)
 
                     firehose_key = 'rivers:firehose'
                     self.redis_client.lpush(firehose_key, cPickle.dumps(river_update))
-                    self.redis_client.ltrim(firehose_key, 0, self.cli_args.entries * 2 - 1)
+                    self.redis_client.ltrim(firehose_key, 0, self.cli_args.entries - 1)
+                    self.redis_client.sadd('updated_rivers', 'firehose')
 
             finally:
                 self.inbox.task_done()
