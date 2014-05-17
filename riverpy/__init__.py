@@ -1,3 +1,4 @@
+import json
 import time
 import redis
 import arrow
@@ -5,13 +6,14 @@ import Queue
 import random
 import cPickle
 import logging
+import operator
 import argparse
 from path import path
 
 from bucket import Bucket
 from download import ParseFeed
 from utils import format_timestamp, slugify
-from riverjs import serialize_riverjs, serialize_manifest
+from riverjs import serialize_riverjs
 from parser import parse_subscription_list
 
 logger = logging.getLogger(__name__)
@@ -57,6 +59,17 @@ def upcoming_feeds(redis_client, num=5):
     """
     return redis_client.zrange('next_check', 0, num - 1, withscores=True)
 
+def write_to_bucket(bucket, key, data):
+    if bucket is not None:
+        bucket.write_string(key, data, 'application/json')
+
+def write_to_file(directory, key, data):
+    if directory is not None:
+        fname = directory.joinpath(key)
+        fname.parent.makedirs_p()
+        with fname.open('w') as fp:
+            fp.write(data)
+
 def river_writer():
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bucket', help='Destination S3 bucket.')
@@ -101,24 +114,49 @@ def river_writer():
     pubsub = redis_client.pubsub()
     pubsub.subscribe('update')
 
+    manifest = []
     for item in pubsub.listen():
         if item['type'] != 'message': continue
-        river_name = item['data']
-        river_obj = generate_river_obj(river_client, river_name)
-        riverjs = serialize_riverjs(river_obj, args.json)
-        key = 'rivers/%s.js' % river_name
-        logger.info('Writing %s.js (%d bytes)' % (river_name, len(riverjs)))
 
-        if s3_bucket:
-            s3_bucket.write_string(key, riverjs, 'application/json')
+        update_msg = cPickle.loads(item['data'])
+        available_rivers = update_msg['available_rivers']
+        updated_rivers = update_msg['updated_rivers']
+        updated_manifest = False
 
-        if output_directory:
-            fname = output_directory.joinpath(key)
-            fname.parent.makedirs_p()
-            with fname.open('w') as fp:
-                fp.write(riverjs)
+        for river_name in updated_rivers:
+            river_obj = generate_river_obj(river_client, river_name)
+            riverjs = serialize_riverjs(river_obj, args.json)
+            key = 'rivers/%s.js' % river_name
+            logger.info('Writing %s.js (%d bytes)' % (river_name, len(riverjs)))
 
-        river_client.srem('updated_rivers', river_name)
+            write_to_bucket(s3_bucket, key, riverjs)
+            write_to_file(output_directory, key, riverjs)
+
+            for river_obj in available_rivers:
+                if river_obj['name'] == river_name:
+                    break
+
+            manifest_obj = {
+                'title': river_obj['title'],
+                'url': 'rivers/%s.js' % river_obj['name'],
+            }
+
+            if manifest_obj not in manifest:
+                updated_manifest = True
+                manifest.append(manifest_obj)
+
+            river_client.srem('updated_rivers', river_name)
+
+        if updated_manifest:
+            manifest = sorted(manifest, key=operator.itemgetter('title'))
+            if args.json:
+                manifest_js = json.dumps(manifest)
+            else:
+                manifest_js = 'onGetRiverManifest(%s)' % json.dumps(manifest)
+            logger.info('Writing manifest.js (%d bytes)' % len(manifest_js))
+            write_to_bucket(s3_bucket, 'manifest.js', manifest_js)
+            write_to_file(output_directory, 'manifest.js', manifest_js)
+            updated_manifest = False
 
 def main():
     parser = argparse.ArgumentParser()
@@ -150,6 +188,7 @@ def main():
                 redis_client.zadd('next_check', feed_url, -1)
         total_feeds += len(river['feeds'])
 
+    rivers.append({'title': 'Firehose', 'name': 'firehose'})
     logger.info('In total, found %d categories (%d feeds)' % (len(rivers), total_feeds))
 
     for t in xrange(args.threads):
@@ -162,8 +201,11 @@ def main():
             inbox.put(feed_url)
         inbox.join()
 
-        for updated_river in redis_client.smembers('updated_rivers'):
-            redis_client.publish('update', updated_river)
+        update_msg = {
+            'available_rivers': rivers,
+            'updated_rivers': redis_client.smembers('updated_rivers'),
+        }
+        redis_client.publish('update', cPickle.dumps(update_msg))
 
         for (feed_url, timestamp) in upcoming_feeds(redis_client):
             obj = arrow.get(timestamp).to('local')

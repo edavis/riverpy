@@ -6,3 +6,5 @@ js
 !README.org
 *.opml
 .tox
+riverpy/web/rivers/
+riverpy/web/manifest.js

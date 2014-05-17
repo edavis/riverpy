@@ -18,18 +18,3 @@ def serialize_riverjs(river_obj, create_json):
         return serialized
     else:
         return 'onGetRiverStream(%s)' % serialized
-
-def serialize_manifest(rivers, create_json):
-    manifest = []
-    for river in rivers:
-        manifest.append({
-            'url': 'rivers/%s.js' % river['name'],
-            'title': river['title'],
-        })
-    serialized = json.dumps(
-        sorted(manifest, key=operator.itemgetter('title'))
-    )
-    if create_json:
-        return serialized
-    else:
-        return 'onGetRiverManifest(%s)' % serialized
