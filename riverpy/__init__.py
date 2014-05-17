@@ -11,7 +11,7 @@ from path import path
 from bucket import Bucket
 from download import ParseFeed
 from utils import format_timestamp, slugify
-from riverjs import serialize_riverjs, serialize_manifest
+from riverjs import serialize_riverjs
 from parser import parse_subscription_list
 
 logger = logging.getLogger(__name__)
