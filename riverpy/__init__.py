@@ -26,7 +26,7 @@ def init_logging(log_filename):
         handler.setFormatter(fmt)
         logger.addHandler(handler)
 
-def generate_river_obj(redis_client, river_name, feed_list):
+def generate_river_obj(redis_client, river_name):
     """
     Return a dict that matches the river.js spec.
     """
@@ -38,7 +38,6 @@ def generate_river_obj(redis_client, river_name, feed_list):
         },
         'metadata': {
             'docs': 'http://riverjs.org/',
-            'subscriptionList': feed_list or '',
             'whenGMT': format_timestamp(arrow.utcnow()),
             'whenLocal': format_timestamp(arrow.utcnow().to('local')),
             'version': '3',
@@ -58,29 +57,82 @@ def upcoming_feeds(redis_client, num=5):
     """
     return redis_client.zrange('next_check', 0, num - 1, withscores=True)
 
-def main():
+def river_writer():
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bucket', help='Destination S3 bucket.')
     parser.add_argument('-o', '--output', help='Destination directory.')
-
     parser.add_argument('-l', '--log-filename', default='river.log', help='Location of log file. [default: %(default)s]')
-    parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds. [default: %(default)s]')
-    parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates. [default: %(default)s]')
-    parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items. [default: %(default)s]')
-
     parser.add_argument('--json', action='store_true', help='Generate JSON instead of JSONP. [default: %(default)s]')
-
     parser.add_argument('--redis-host', default='127.0.0.1', help='Redis host to use. [default: %(default)s]')
     parser.add_argument('--redis-port', default=6379, type=int, help='Redis port to use. [default: %(default)s]')
     parser.add_argument('--redis-db', default=0, type=int, help='Redis DB to use. [default: %(default)s]')
-
-    parser.add_argument('feeds', help='Subscription list to use. Accepts URLs and filenames.')
     args = parser.parse_args()
 
     init_logging(args.log_filename)
 
     if not args.bucket and not args.output:
         raise SystemExit('Need either a -b/--bucket or -o/--output directory. Exiting.')
+
+    # Need two clients as redis_client can't do anything else once it
+    # subscribes to the channel.
+    redis_client = redis.Redis(
+        host=args.redis_host,
+        port=args.redis_port,
+        db=args.redis_db,
+    )
+
+    river_client = redis.Redis(
+        host=args.redis_host,
+        port=args.redis_port,
+        db=args.redis_db,
+    )
+
+    if args.bucket:
+        s3_bucket = Bucket(args.bucket)
+    else:
+        s3_bucket = None
+
+    if args.output:
+        output_directory = path(args.output)
+        output_directory.makedirs_p()
+    else:
+        output_directory = None
+
+    pubsub = redis_client.pubsub()
+    pubsub.subscribe('update')
+
+    for item in pubsub.listen():
+        if item['type'] != 'message': continue
+        river_name = item['data']
+        river_obj = generate_river_obj(river_client, river_name)
+        riverjs = serialize_riverjs(river_obj, args.json)
+        key = 'rivers/%s.js' % river_name
+        logger.info('Writing %s.js (%d bytes)' % (river_name, len(riverjs)))
+
+        if s3_bucket:
+            s3_bucket.write_string(key, riverjs, 'application/json')
+
+        if output_directory:
+            fname = output_directory.joinpath(key)
+            fname.parent.makedirs_p()
+            with fname.open('w') as fp:
+                fp.write(riverjs)
+
+        river_client.srem('updated_rivers', river_name)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--log-filename', default='river.log', help='Location of log file. [default: %(default)s]')
+    parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds. [default: %(default)s]')
+    parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates. [default: %(default)s]')
+    parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items. [default: %(default)s]')
+    parser.add_argument('--redis-host', default='127.0.0.1', help='Redis host to use. [default: %(default)s]')
+    parser.add_argument('--redis-port', default=6379, type=int, help='Redis port to use. [default: %(default)s]')
+    parser.add_argument('--redis-db', default=0, type=int, help='Redis DB to use. [default: %(default)s]')
+    parser.add_argument('feeds', help='Subscription list to use. Accepts URLs and filenames.')
+    args = parser.parse_args()
+
+    init_logging(args.log_filename)
 
     redis_client = redis.Redis(
         host=args.redis_host,
@@ -105,21 +157,13 @@ def main():
         p.daemon = True
         p.start()
 
-    if args.bucket:
-        s3_bucket = Bucket(args.bucket)
-    else:
-        s3_bucket = None
-
-    if args.output:
-        output_directory = path(args.output)
-        output_directory.makedirs_p()
-    else:
-        output_directory = None
-
     while True:
         for feed_url in outdated_feeds(redis_client):
             inbox.put(feed_url)
         inbox.join()
+
+        for updated_river in redis_client.smembers('updated_rivers'):
+            redis_client.publish('update', updated_river)
 
         for (feed_url, timestamp) in upcoming_feeds(redis_client):
             obj = arrow.get(timestamp).to('local')
