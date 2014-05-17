@@ -18,15 +18,11 @@ from parser import parse_subscription_list
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-def init_logging(log_filename):
-    fh = logging.FileHandler(log_filename)
-    ch = logging.StreamHandler()
-    fmt = logging.Formatter('[%(levelname)-5s] %(asctime)s - %(name)s - %(message)s')
-    for handler in [fh, ch]:
-        handler.setLevel(logging.DEBUG)
-        handler.setFormatter(fmt)
-        logger.addHandler(handler)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+fmt = logging.Formatter('[%(levelname)-5s] %(asctime)s - %(name)s - %(message)s')
+ch.setFormatter(fmt)
+logger.addHandler(ch)
 
 def generate_river_obj(redis_client, river_name):
     """
@@ -74,14 +70,11 @@ def river_writer():
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bucket', help='Destination S3 bucket.')
     parser.add_argument('-o', '--output', help='Destination directory.')
-    parser.add_argument('-l', '--log-filename', default='river.log', help='Location of log file. [default: %(default)s]')
     parser.add_argument('--json', action='store_true', help='Generate JSON instead of JSONP. [default: %(default)s]')
     parser.add_argument('--redis-host', default='127.0.0.1', help='Redis host to use. [default: %(default)s]')
     parser.add_argument('--redis-port', default=6379, type=int, help='Redis port to use. [default: %(default)s]')
     parser.add_argument('--redis-db', default=0, type=int, help='Redis DB to use. [default: %(default)s]')
     args = parser.parse_args()
-
-    init_logging(args.log_filename)
 
     if not args.bucket and not args.output:
         raise SystemExit('Need either a -b/--bucket or -o/--output directory. Exiting.')
@@ -160,7 +153,6 @@ def river_writer():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--log-filename', default='river.log', help='Location of log file. [default: %(default)s]')
     parser.add_argument('-t', '--threads', default=4, type=int, help='Number of threads to use for downloading feeds. [default: %(default)s]')
     parser.add_argument('-e', '--entries', default=100, type=int, help='Display this many grouped feed updates. [default: %(default)s]')
     parser.add_argument('-i', '--initial', default=5, type=int, help='Limit new feeds to this many new items. [default: %(default)s]')
@@ -169,8 +161,6 @@ def main():
     parser.add_argument('--redis-db', default=0, type=int, help='Redis DB to use. [default: %(default)s]')
     parser.add_argument('feeds', help='Subscription list to use. Accepts URLs and filenames.')
     args = parser.parse_args()
-
-    init_logging(args.log_filename)
 
     redis_client = redis.Redis(
         host=args.redis_host,
