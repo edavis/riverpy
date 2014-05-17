@@ -162,6 +162,10 @@ class ParseFeed(threading.Thread):
                 feed_content = self.request_feed(feed_url)
             except requests.exceptions.RequestException as ex:
                 logger.exception('Failed to check %s' % feed_url)
+                future = arrow.utcnow() + timedelta(seconds=60*60)
+                fmt = format_timestamp(future)
+                logger.info('Next check for %s: %s (%d seconds)' % (feed_url, future, 60*60))
+                self.redis_client.zadd('next_check', feed_url, future.timestamp)
             else:
                 try:
                     feed_parsed = feedparser.parse(feed_content)
