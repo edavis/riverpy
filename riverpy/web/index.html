@@ -23,7 +23,7 @@
 	<div ng-class="{first: $first}" class="article" id="{{ item.id }}" ng-repeat="item in feed.item">
 	  <h3><a ng-bind-html="item.title" ng-href="{{ item.link }}" target="_blank" rel="external"></a></h3>
 	  <p ng-bind-html="item.body"></p>
-	  <small class="time" ng-bind="item.pubDate | convertDate | date:'shortTime'"></small>
+	  <small class="time" ng-bind="item.pubDate | convertDate | date:'hh:mm a; M/dd/yy'"></small>
 	</div>
       </div>
     </div>
