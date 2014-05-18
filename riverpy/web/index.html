@@ -9,19 +9,19 @@
     <div id="container">
       <div id="control">
 	<select ng-model="currentRiver" ng-click="changeRiver" ng-options="r.title for r in rivers"></select>
-	<small class="time">Updated: <span am-format="ddd, DD MMM YYYY HH:mm:ss Z" am-time-ago="riverObj.metadata.whenGMT"></span></small>
+	<small class="time">Updated: <span ng-bind="riverObj.metadata.whenGMT | convertDate | date:'medium'"></span></small>
       </div>
 
       <div class="section" ng-class="{first: $first}" ng-repeat="feed in riverObj.updatedFeeds.updatedFeed">
 	<div class="header">
-	  <h2><a ng-bind="feed.feedTitle" href="{{ feed.websiteUrl }}"></a> (<a href="{{ feed.feedUrl }}">Feed</a>)</h2>
-	  <small class="time" ng-bind="feed.whenLastUpdate | amDateFormat:'LT[; ]DD MMM'"></small>
+	  <h2><a ng-bind="feed.feedTitle" ng-href="{{ feed.websiteUrl }}"></a> (<a ng-href="{{ feed.feedUrl }}">Feed</a>)</h2>
+	  <small class="time" ng-bind="feed.whenLastUpdate | convertDate | date:'hh:mm a; M/dd/yy'"></small>
 	</div>
 
 	<div ng-class="{first: $first}" class="article" id="{{ item.id }}" ng-repeat="item in feed.item">
-	  <h3><a ng-bind-html="item.title" href="{{ item.link }}" target="_blank" rel="external"></a></h3>
+	  <h3><a ng-bind-html="item.title" ng-href="{{ item.link }}" target="_blank" rel="external"></a></h3>
 	  <p ng-bind-html="item.body"></p>
-	  <small class="time" am-format="ddd, DD MMM YYYY HH:mm:ss Z" am-time-ago="item.pubDate"></small>
+	  <small class="time" ng-bind="item.pubDate | convertDate | date:'shortTime'"></small>
 	</div>
       </div>
     </div>
@@ -29,8 +29,6 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular-sanitize.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.6.0/moment.min.js"></script>
-    <script src="//cdn.jsdelivr.net/angular.moment/0.7.0/angular-moment.js"></script>
     <script src="controllers.js"></script>
   </body>
 </html>

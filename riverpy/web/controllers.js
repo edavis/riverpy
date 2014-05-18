@@ -1,7 +1,9 @@
-var riverApp = angular.module('riverApp', ['angularMoment', 'ngSanitize']);
+var riverApp = angular.module('riverApp', ['ngSanitize']);
 
-riverApp.constant('angularMomentConfig', {
-    preprocess: 'utc',
+riverApp.filter('convertDate', function() {
+    return function(input) {
+	return Date.parse(input);
+    };
 });
 
 riverApp.controller('RiverController', ['$scope', '$http', function($scope, $http) {
