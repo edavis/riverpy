@@ -1,6 +1,7 @@
 import sys
 import redis
 import arrow
+import random
 import bleach
 import logging
 import cPickle
@@ -220,6 +221,16 @@ class ParseFeed(threading.Thread):
                     history.insert(0, arrow.utcnow().timestamp)
 
                 delta = self.average_update_interval(history)
+
+                # Don't check more than once a minute
+                if delta.seconds < 60:
+                    delta = timedelta(seconds=60)
+
+                # Cap the next check at two hours.
+                elif delta.seconds > (2*60*60):
+                    logger.debug('Randomly scheduling %s' % feed_url)
+                    delta = timedelta(seconds=random.uniform(60*60, 2*60*60))
+
                 future_update = arrow.utcnow() + delta
                 fmt = format_timestamp(future_update.to('local'))
 
