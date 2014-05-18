@@ -24,6 +24,11 @@ select {
   margin-bottom: 30px;
 }
 
+.fa {
+  padding-left: 10px;
+  color: #bbb;
+}
+
 /* Each group of feed updates */
 
 .section {

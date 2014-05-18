@@ -2,6 +2,7 @@
 <html ng-app="riverApp">
   <head>
     <link href="//cdnjs.cloudflare.com/ajax/libs/normalize/3.0.1/normalize.min.css" rel="stylesheet">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
   </head>
   <body ng-controller="RiverController">
@@ -9,6 +10,7 @@
     <div id="container">
       <div id="control">
 	<select ng-model="currentRiver" ng-click="changeRiver" ng-options="r.title for r in rivers"></select>
+	<i class="fa ng-class: {'fa-refresh': !loading, 'fa-spinner': loading};" ng-click="refresh();"></i>
 	<small class="time">Updated: <span ng-bind="riverObj.metadata.whenGMT | convertDate | date:'medium'"></span></small>
       </div>
 
