@@ -16,7 +16,7 @@ you've subscribed to and presents only the new items, newest first. As
 you scroll down you go back in time, to older items."
 
 [quote]: <http://river2.newsriver.org/#whatIsARiverOfNewsStyleAggregator>
-[riverpy-demo]: <http://riverpy-demo.s3.amazonaws.com/index.html>
+[riverpy-demo]: <http://river-demo.ericdavis.org/>
 
 ## Installation
 
