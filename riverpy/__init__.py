@@ -105,7 +105,7 @@ def river_writer():
         output_directory = None
 
     pubsub = redis_client.pubsub()
-    pubsub.subscribe('update')
+    pubsub.subscribe('update:%d' % args.redis_db)
 
     manifest = []
     for item in pubsub.listen():
@@ -195,7 +195,7 @@ def main():
             'available_rivers': rivers,
             'updated_rivers': redis_client.smembers('updated_rivers'),
         }
-        redis_client.publish('update', cPickle.dumps(update_msg))
+        redis_client.publish('update:%d' % args.redis_db, cPickle.dumps(update_msg))
 
         for (feed_url, timestamp) in upcoming_feeds(redis_client):
             obj = arrow.get(timestamp).to('local')
